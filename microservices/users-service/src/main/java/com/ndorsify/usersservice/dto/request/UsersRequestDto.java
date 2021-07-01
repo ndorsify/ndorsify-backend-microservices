@@ -15,5 +15,8 @@ public class UsersRequestDto {
 
     private String email;
 
-    private String number;
+    private String imageUrl;
+
+    private String country;
+
 }

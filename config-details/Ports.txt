@@ -1,0 +1,3 @@
+Users-Service = 1000
+Dynamic-content-service = 5000
+Profile-Service = 6000

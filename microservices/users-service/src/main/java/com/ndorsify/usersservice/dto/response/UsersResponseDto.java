@@ -17,5 +17,5 @@ public class UsersResponseDto {
 
     private String email;
 
-    private String number;
+    private String imageUrl;
 }

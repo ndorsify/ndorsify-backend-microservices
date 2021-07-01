@@ -1,4 +1,4 @@
-package com.ndorsify.usersservice.entity;
+package com.ndorsify.dynamiccontentservice.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -6,31 +6,28 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Users {
+public class Content {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String firstName;
+    private String category;
 
-    private String lastName;
+    private String lookupText1;
 
-    private String email;
+    private String lookupValue1;
 
-    private String imageUrl;
+    private String lookupText2;
 
-    private String role;
+    private String lookupValue2;
 
     private String createdBy;
 

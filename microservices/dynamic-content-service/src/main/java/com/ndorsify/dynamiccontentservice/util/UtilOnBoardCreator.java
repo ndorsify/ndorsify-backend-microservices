@@ -7,7 +7,6 @@ public class UtilOnBoardCreator {
 
     public static Questions questionsFromContentEntity(Content content){
         Questions questions = new Questions();
-        questions.setId(content.getId());
         questions.setQuestion(content.getLookupValue1());
         questions.setDataType(content.getLookupText2());
         questions.setOptions(content.getLookupValue2());

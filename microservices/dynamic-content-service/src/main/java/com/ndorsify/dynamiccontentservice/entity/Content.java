@@ -19,15 +19,15 @@ public class Content {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String category;
+    private String lookupText1; //Hold the type
 
-    private String lookupText1;
+    private String lookupValue1;// Hold the question
 
-    private String lookupValue1;
+    private String lookupText2;// Holds the dataType
 
-    private String lookupText2;
+    private String lookupValue2;// Holds the options
 
-    private String lookupValue2;
+    private String lookupText3;// Holds the category
 
     private String createdBy;
 

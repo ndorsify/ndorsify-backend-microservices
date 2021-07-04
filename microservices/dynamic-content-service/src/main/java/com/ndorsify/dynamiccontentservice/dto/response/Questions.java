@@ -9,10 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Questions {
 
-    private Long id;
-
-    private String category;
-
     private String question;
 
     private String dataType;

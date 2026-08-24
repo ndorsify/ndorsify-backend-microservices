@@ -1,0 +1,62 @@
+name: AI Doc Gen
+
+# Keeps the knowledge base (AGENTS.md, docs/) in sync with the code.
+# Runs on demand, and as a reminder when source changes land on main.
+#
+# SETUP REQUIRED before the generate step does real work:
+#   1. Add repo secret ANTHROPIC_API_KEY (Settings → Secrets → Actions).
+#   2. Uncomment the "Generate docs with Claude" step below.
+#   3. Provide scripts/ai-doc-gen.* or swap in anthropics/claude-code-action.
+# Until then the workflow runs green and only reports what it would update.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "What to regenerate"
+        type: choice
+        default: agents-map
+        options: [agents-map, playbooks, all]
+  push:
+    branches: [main]
+    paths:
+      - "microservices/**"
+      - "docs/adr/**"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ai-doc-gen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Report scope
+        run: |
+          echo "Target: ${{ github.event.inputs.target || 'agents-map (push)' }}"
+          echo "Changed files:"
+          git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "(first commit)"
+
+      # --- Enable once ANTHROPIC_API_KEY is configured ---------------------
+      # - name: Generate docs with Claude
+      #   env:
+      #     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      #   run: node scripts/ai-doc-gen.mjs --target "${{ github.event.inputs.target || 'agents-map' }}"
+      #
+      # - name: Open PR with regenerated docs
+      #   uses: peter-evans/create-pull-request@v6
+      #   with:
+      #     branch: chore/ai-doc-gen
+      #     title: "docs: regenerate knowledge base"
+      #     commit-message: "docs: regenerate knowledge base via AI Doc Gen"
+      #     labels: documentation
+      # ---------------------------------------------------------------------
+
+      - name: Placeholder (no API key configured)
+        run: echo "AI Doc Gen scaffold ran. Configure ANTHROPIC_API_KEY and enable the steps above to generate docs."

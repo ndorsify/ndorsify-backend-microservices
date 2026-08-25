@@ -9,5 +9,10 @@ class Settings(BaseSettings):
     port: int = 6000
     database_url: str = "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/profiledb"
 
+    # --- Auth (P0) ---
+    # Must match users-service so this service can verify access tokens it issues.
+    jwt_secret: str = "dev-insecure-change-me"
+    jwt_algorithm: str = "HS256"
+
 
 settings = Settings()

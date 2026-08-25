@@ -7,6 +7,8 @@ import pytest
 _db_fd, _db_path = tempfile.mkstemp(suffix=".sqlite3")
 os.close(_db_fd)
 os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_db_path}"
+# Deterministic JWT secret so tests can mint access tokens require_auth accepts.
+os.environ.setdefault("JWT_SECRET", "test-secret-key-at-least-32-bytes-long!")
 
 
 @pytest.fixture()

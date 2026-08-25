@@ -6,6 +6,7 @@ asyncpg>=0.29
 alembic>=1.13
 pydantic>=2.6,<3.0
 pydantic-settings>=2.1
+pyjwt>=2.8
 
 # dev / test
 pytest>=8.0

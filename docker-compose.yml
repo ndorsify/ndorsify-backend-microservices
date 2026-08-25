@@ -1,0 +1,61 @@
+# Local dev stack: one Postgres (three databases) + the three Node-replaced,
+# now Python/FastAPI services. Bring it all up with:
+#
+#   docker compose up --build
+#
+# Services create their own tables and seed data on startup (see each
+# service's app/db/session.py), so no manual migration step is required to
+# get a working stack.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ndorsify
+      POSTGRES_PASSWORD: ndorsify
+      POSTGRES_DB: ndorsify
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ndorsify"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  users-service:
+    build: ./microservices/users-service
+    environment:
+      PORT: 1000
+      DATABASE_URL: postgresql+asyncpg://ndorsify:ndorsify@postgres:5432/usersdb
+    ports:
+      - "1000:1000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  dynamic-content-service:
+    build: ./microservices/dynamic-content-service
+    environment:
+      PORT: 5000
+      DATABASE_URL: postgresql+asyncpg://ndorsify:ndorsify@postgres:5432/dynamiccontentdb
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  profile-service:
+    build: ./microservices/profile-service
+    environment:
+      PORT: 6000
+      DATABASE_URL: postgresql+asyncpg://ndorsify:ndorsify@postgres:5432/profiledb
+    ports:
+      - "6000:6000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -4,9 +4,11 @@ The backend services for **Ndorsify** — a platform connecting brands with
 creators/influencers for endorsements, campaigns, and marketing engagement. The
 web client lives in `ndorsify-app`.
 
-> **Being rewritten to Node.js.** The current services are Spring Boot (Java 11)
-> and serve as the behavioral reference. See
-> [ADR 0002](docs/adr/0002-migrate-backend-to-nodejs.md).
+> **Rewritten to Python/FastAPI on Postgres.** See
+> [ADR 0003](docs/adr/0003-use-python-fastapi-and-postgres.md) (amends
+> [ADR 0002](docs/adr/0002-migrate-backend-to-nodejs.md)). The original Spring
+> Boot (Java 11) sources under `microservices/*/src/` remain only as the
+> behavioral reference until removed.
 
 ## Services
 
@@ -16,34 +18,44 @@ web client lives in `ndorsify-app`.
 | `dynamic-content-service` | 5000 | Server-driven onboarding questions |
 | `profile-service` | 6000 | Profiles (skeleton) |
 
-Each service is standalone under `microservices/`. There is no combined build —
-run and build them individually.
+Each service is a standalone FastAPI app under `microservices/`. There is no
+combined build — run and build them individually, or use Docker Compose.
 
-## Prerequisites (current Java stack)
+## Run everything (Docker)
 
-- **JDK 11.** If not installed: `brew install --cask temurin@11`.
-- Maven wrapper is bundled per service (`./mvnw`) — no separate Maven install.
+```bash
+docker compose up --build
+```
 
-## Run a service
+Brings up Postgres (three databases: `usersdb` / `dynamiccontentdb` /
+`profiledb`) and all three services. Each container runs `alembic upgrade head`
+and seeds on start — no manual migration step needed. Swagger UI per service at
+`/api-docs.html`.
+
+## Run a single service
+
+Requires **Python 3.9+**.
 
 ```bash
 cd microservices/users-service
-./mvnw spring-boot:run
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m app.server        # uvicorn on the service port
 ```
 
-Each service exposes Swagger UI at `/api-docs.html`. Storage is in-memory H2, so
-**data resets on every restart** (this changes during the Node rewrite).
+Configure via `.env` (copy `.env.example`): `PORT` and `DATABASE_URL` (a
+SQLAlchemy async URL). Point `DATABASE_URL` at Postgres for real use, or SQLite
+(`sqlite+aiosqlite:///dev.sqlite3`) for quick local poking.
 
-## Common commands
+## Test
 
-| Command (run inside a service dir) | What it does |
-|---|---|
-| `./mvnw spring-boot:run` | Run the service |
-| `./mvnw test` | Run tests |
-| `./mvnw clean package` | Build the jar |
+```bash
+cd microservices/<service>
+pytest -q
+```
 
-See [`CLAUDE.md`](CLAUDE.md) for the full command reference, including single-test
-runs and post-rewrite Node commands.
+Tests run against a throwaway SQLite database (via `aiosqlite`), so no Postgres
+is required to run the suite.
 
 ## Documentation
 

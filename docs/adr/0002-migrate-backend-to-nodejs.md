@@ -4,7 +4,8 @@ Date: 2026-08-24
 
 ## Status
 
-Accepted
+Superseded by [ADR 0003](0003-use-python-fastapi-and-postgres.md) — the backend
+was rewritten in Python/FastAPI (on Postgres) rather than Node.js.
 
 ## Context
 

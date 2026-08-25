@@ -3,10 +3,11 @@
 High-level architecture map for LLM agents. For commands see [`CLAUDE.md`](CLAUDE.md);
 for the "why" behind decisions see [`docs/adr/`](docs/adr/).
 
-> **Stack is in transition.** The services are being rewritten from Spring Boot
-> (Java 11) to **Node.js** — see [ADR 0002](docs/adr/0002-migrate-backend-to-nodejs.md).
-> The Java details below describe the current reference implementation; confirm a
-> service's live stack by `package.json` vs `pom.xml` before acting.
+> **Stack:** the services are **Python/FastAPI** on **Postgres** (SQLAlchemy 2.0
+> async) — see [ADR 0003](docs/adr/0003-use-python-fastapi-and-postgres.md),
+> which superseded the earlier Node.js decision in
+> [ADR 0002](docs/adr/0002-migrate-backend-to-nodejs.md). The original Spring
+> Boot (Java 11) sources have been removed; the ADRs retain the history.
 
 ## What this is
 
@@ -21,36 +22,49 @@ not share code and are built/run individually.
 |---|---|---|---|---|
 | `users-service` | 1000 | `/users` | User CRUD with pagination/sorting | Live |
 | `dynamic-content-service` | 5000 | `/onboard/creator` | Server-driven onboarding questions | Live |
-| `profile-service` | 6000 | — | Profiles | Skeleton (no controllers yet) |
+| `profile-service` | 6000 | — | Profiles | Skeleton (health only, no routes yet) |
 
-Ports are also recorded in `config-details/Ports.txt`.
+## Patterns (Python/FastAPI)
 
-## Patterns (current Java reference — carry the intent into Node)
+Each service is a standalone FastAPI app under `microservices/<service>/app/`:
 
-- **Layering:** `controller/` → `service/` → `repository/`, with `entity/` for
-  persistence and `dto/request` + `dto/response` at the API boundary. Entity↔DTO
-  mapping is done by static methods in a `util/` class, not a mapping framework.
+- **Layering:** `routers/` (controllers) → `services/` (business logic) →
+  `repositories/` (SQLAlchemy data access), with `models/` for ORM entities and
+  `schemas/` for Pydantic DTOs. Entity↔DTO mapping lives in `utils/mapping.py`
+  (plain functions, mirroring the Java `util/` classes).
+- **Config:** `app/core/config.py` — `pydantic-settings` reads `PORT` and
+  `DATABASE_URL` from the environment / `.env`.
+- **DB wiring:** `app/db/session.py` holds the async engine, session factory,
+  and the `get_session` FastAPI dependency. On Postgres the schema is owned by
+  **Alembic** (`alembic/`, run via `alembic upgrade head` before the server
+  starts — see each Dockerfile); on SQLite (local/tests) `init_db` creates
+  tables directly. Seeding (where applicable) runs on startup and is idempotent.
 - **Response envelope:** `dynamic-content-service` wraps responses in a generic
-  `NDorsifyUtil<T>` (`status` / `message` / `data`); `users-service` returns DTOs
-  directly. No shared library — copy-pasted per service if reused.
-- **Persistence:** in-memory **H2** (`jdbc:h2:mem:...`) — data resets on restart;
-  `dynamic-content-service` seeds from `src/main/resources/data.sql`. Replacing
-  this with a persistent datastore is a required step of the rewrite.
-- **Docs:** each service exposes Swagger UI at `/api-docs.html` (springdoc).
-- `spring-cloud-starter-openfeign` is a dependency in every service but **no Feign
-  clients exist yet** — services don't call each other. Inter-service calls become
-  HTTP clients in the Node rewrite.
+  `NDorsifyUtil` (`status` / `message` / `data`, `schemas/envelope.py`);
+  `users-service` returns DTOs directly and uses a Spring-`Page`-shaped envelope
+  (`schemas/pagination.py`) for paginated `GET /users`. No shared library —
+  each service is self-contained.
+- **Persistence:** **Postgres** via SQLAlchemy 2.0 async + `asyncpg`; one DB per
+  service. `dynamic-content-service` seeds onboarding rows in `app/db/seed.py`
+  (port of the Java `data.sql`). Tests run against SQLite (`aiosqlite`).
+- **Docs:** each service exposes Swagger UI at `/api-docs.html` (FastAPI
+  `docs_url`), plus a `/health` endpoint.
+- Services don't call each other yet. Inter-service calls become HTTP clients
+  (e.g. `httpx`) when needed.
 
-## Known issues
+## Known issues / follow-ups
 
-- `dynamic-content-service`'s `application.properties` sets
-  `spring.application.name=users-service` (copy-paste error).
+- `users-service` and `dynamic-content-service` have an initial Alembic
+  migration (`0001_initial`); `profile-service` has the Alembic scaffolding but
+  no migration yet (no models). Author its first migration when the profile
+  model lands (`alembic revision --autogenerate`).
 
-## Rewrite guidance
+## Guidance for new work
 
-- Keep the existing service boundaries and ports (1000 / 5000 / 6000).
-- Introduce a persistent datastore (next ADR) — do not carry over in-memory H2.
-- New services follow the phased feature plan (kept at the workspace root).
+- Keep the existing service boundaries and ports (1000 / 5000 / 6000) and the
+  established HTTP contracts.
+- New services follow the phased feature plan (kept at the workspace root) and
+  reuse the layering above.
 
 ## Knowledge base
 

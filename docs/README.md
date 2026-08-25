@@ -3,9 +3,10 @@
 Documentation for the Ndorsify backend services. Structured so both humans and
 coding agents can find the *why* behind the code, not just the *what*.
 
-> The backend is being rewritten from Spring Boot (Java) to Node.js — see
-> [ADR 0002](adr/0002-migrate-backend-to-nodejs.md). Confirm a service's current
-> stack by `package.json` vs `pom.xml` before acting.
+> The backend is **Python/FastAPI** on **Postgres** — see
+> [ADR 0003](adr/0003-use-python-fastapi-and-postgres.md), which superseded the
+> earlier Node.js decision in [ADR 0002](adr/0002-migrate-backend-to-nodejs.md).
+> The original Spring Boot (Java) sources have been removed.
 
 | Folder | Holds | Horizon |
 |---|---|---|

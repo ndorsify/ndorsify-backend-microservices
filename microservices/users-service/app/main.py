@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from .core.config import settings
 from .db.session import init_db
-from .routers import users
+from .routers import auth, users
 
 
 @asynccontextmanager
@@ -23,6 +23,7 @@ def create_app() -> FastAPI:
         openapi_url="/api-docs.json",
         lifespan=lifespan,
     )
+    app.include_router(auth.router)
     app.include_router(users.router)
 
     @app.get("/health", tags=["meta"])

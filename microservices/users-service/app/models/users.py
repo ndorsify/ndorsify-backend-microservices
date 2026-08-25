@@ -14,9 +14,21 @@ class Users(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     first_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    email: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    # Unique login identity. Nullable for legacy/admin-created rows; multiple
+    # NULLs stay allowed under a unique index (Postgres & SQLite).
+    email: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, unique=True, index=True
+    )
     image_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     role: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    # --- Auth (P0) ---
+    password_hash: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    email_verified_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True
+    )
+    status: Mapped[str] = mapped_column(
+        String, server_default="active", default="active", nullable=False
+    )
     created_by: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     modified_by: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_date: Mapped[datetime] = mapped_column(

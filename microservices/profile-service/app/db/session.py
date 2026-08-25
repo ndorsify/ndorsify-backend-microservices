@@ -20,10 +20,13 @@ SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSe
 
 async def init_db() -> None:
     # Postgres schema is owned by Alembic (`alembic upgrade head`). On SQLite
-    # (local/dev/tests) create tables directly. Either way this is a no-op until
-    # the first model lands under app/models/ — startup wiring is already here.
+    # (local/dev/tests) create tables directly.
     if not settings.database_url.startswith("sqlite"):
         return
+
+    # Import models so they register on Base.metadata before create_all.
+    from .. import models  # noqa: F401
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

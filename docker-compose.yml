@@ -57,5 +57,16 @@ services:
       postgres:
         condition: service_healthy
 
+  messaging-service:
+    build: ./microservices/messaging-service
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql+asyncpg://ndorsify:ndorsify@postgres:5432/messagingdb
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:

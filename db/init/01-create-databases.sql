@@ -5,3 +5,4 @@ CREATE DATABASE usersdb;
 CREATE DATABASE dynamiccontentdb;
 CREATE DATABASE profiledb;
 CREATE DATABASE messagingdb;
+CREATE DATABASE discoverydb;

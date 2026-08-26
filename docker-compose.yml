@@ -68,5 +68,16 @@ services:
       postgres:
         condition: service_healthy
 
+  discovery-service:
+    build: ./microservices/discovery-service
+    environment:
+      PORT: 9000
+      DATABASE_URL: postgresql+asyncpg://ndorsify:ndorsify@postgres:5432/discoverydb
+    ports:
+      - "9000:9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:

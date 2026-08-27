@@ -21,6 +21,7 @@ jobs:
           - profile-service
           - messaging-service
           - discovery-service
+          - campaign-service
     defaults:
       run:
         working-directory: microservices/${{ matrix.service }}

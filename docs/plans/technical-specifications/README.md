@@ -6,13 +6,13 @@ and [ADR 0003](../../adr/0003-use-python-fastapi-and-postgres.md).
 
 | Spec | Covers | Service(s) | Port |
 |---|---|---|---|
-| [p0-foundation](p0-foundation.md) | Auth, roles, profiles, base messaging & discovery | users, profile, messaging, discovery | 1000/6000/3000/9000 |
+| [p0-foundation](p0-foundation.md) | Auth, roles, profiles, base messaging & discovery | users, profile, messaging, discovery | 1000/6060/3000/9000 |
 | [e1-campaigns](e1-campaigns.md) | Briefs, invitations, marketplace, applications | campaign | 2000 |
 | [e2-outreach](e2-outreach.md) | Templates, campaign-linked threads | messaging | 3000 |
 | [e3-collaboration](e3-collaboration.md) | Deliverables, status pipeline, submissions | collaboration | 4000 |
 | [e4-endorsements](e4-endorsements.md) | Endorsement requests, two-way reviews | endorsement | 7000 |
 | [e5-notifications](e5-notifications.md) | Event bus, in-app + email | notification | 8000 |
-| [e6-profiles-discovery](e6-profiles-discovery.md) | Socials, media kit, brand directory | profile, discovery | 6000/9000 |
+| [e6-profiles-discovery](e6-profiles-discovery.md) | Socials, media kit, brand directory | profile, discovery | 6060/9000 |
 | [e7-platform](e7-platform.md) | Media storage, verification, search, CI, **CORS** | cross-cutting | — |
 
 > **Frontend specs** live in the `ndorsify-app` repo under the same path

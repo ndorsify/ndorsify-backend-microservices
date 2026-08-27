@@ -1,4 +1,4 @@
-# E6 · Profile & discovery upgrades  `profile-service` (:6000) · `discovery-service` (:9000)
+# E6 · Profile & discovery upgrades  `profile-service` (:6060) · `discovery-service` (:9000)
 
 **Status:** Proposed · **Depends on:** P0 profiles & discovery base; E7 media
 storage (media kit); E4 aggregate rating.

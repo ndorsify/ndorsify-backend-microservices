@@ -16,7 +16,7 @@ web client lives in `ndorsify-app`.
 |---|---|---|
 | `users-service` | 1000 | User CRUD with pagination |
 | `dynamic-content-service` | 5000 | Server-driven onboarding questions |
-| `profile-service` | 6000 | Profiles (skeleton) |
+| `profile-service` | 6060 | Profiles (skeleton) |
 
 Each service is a standalone FastAPI app under `microservices/`. There is no
 combined build — run and build them individually, or use Docker Compose.

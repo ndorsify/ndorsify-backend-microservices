@@ -1,4 +1,4 @@
-"""profile-service — FastAPI application entrypoint (port 6000).
+"""profile-service — FastAPI application entrypoint (port 6060).
 
 Serves creator and brand profiles (P0). See
 docs/plans/technical-specifications/p0-foundation.md §2.

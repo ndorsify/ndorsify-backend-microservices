@@ -22,7 +22,7 @@ docker compose up --build
 ```
 
 Services: `users-service` :1000 · `dynamic-content-service` :5000 ·
-`profile-service` :6000. Swagger UI per service at `/api-docs.html`.
+`profile-service` :6060. Swagger UI per service at `/api-docs.html`.
 
 ## Run a single service (Python / FastAPI)
 
@@ -65,5 +65,5 @@ is separate from migrations.
 
 ## Ports
 
-`users-service` 1000 · `dynamic-content-service` 5000 · `profile-service` 6000.
+`users-service` 1000 · `dynamic-content-service` 5000 · `profile-service` 6060.
 Swagger UI per service at `/api-docs.html`.

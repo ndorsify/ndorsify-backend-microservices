@@ -49,10 +49,10 @@ services:
   profile-service:
     build: ./microservices/profile-service
     environment:
-      PORT: 6000
+      PORT: 6060
       DATABASE_URL: postgresql+asyncpg://ndorsify:ndorsify@postgres:5432/profiledb
     ports:
-      - "6000:6000"
+      - "6060:6060"
     depends_on:
       postgres:
         condition: service_healthy

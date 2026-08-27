@@ -1,9 +1,9 @@
-# profile-service — FastAPI (uvicorn) on port 6000
+# profile-service — FastAPI (uvicorn) on port 6060
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PORT=6000
+    PORT=6060
 
 WORKDIR /app
 
@@ -14,6 +14,6 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini .
 
-EXPOSE 6000
+EXPOSE 6060
 # Apply migrations (Postgres schema is Alembic-owned), then start the server.
 CMD ["sh", "-c", "alembic upgrade head && python -m app.server"]

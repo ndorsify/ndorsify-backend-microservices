@@ -62,7 +62,7 @@ OAuth callback find-or-create; `require_role` rejects mismatched role (403).
 
 ---
 
-## 2. Profiles  `profile-service` (:6000)
+## 2. Profiles  `profile-service` (:6060)
 
 Flesh out the skeleton. Two profile shapes keyed by `user_id`.
 

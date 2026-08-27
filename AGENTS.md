@@ -22,7 +22,7 @@ not share code and are built/run individually.
 |---|---|---|---|---|
 | `users-service` | 1000 | `/users` | User CRUD with pagination/sorting | Live |
 | `dynamic-content-service` | 5000 | `/onboard/creator` | Server-driven onboarding questions | Live |
-| `profile-service` | 6000 | — | Profiles | Skeleton (health only, no routes yet) |
+| `profile-service` | 6060 | — | Profiles | Skeleton (health only, no routes yet) |
 
 ## Patterns (Python/FastAPI)
 
@@ -61,7 +61,7 @@ Each service is a standalone FastAPI app under `microservices/<service>/app/`:
 
 ## Guidance for new work
 
-- Keep the existing service boundaries and ports (1000 / 5000 / 6000) and the
+- Keep the existing service boundaries and ports (1000 / 5000 / 6060) and the
   established HTTP contracts.
 - New services follow the phased feature plan (kept at the workspace root) and
   reuse the layering above.

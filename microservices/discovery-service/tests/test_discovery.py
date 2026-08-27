@@ -125,3 +125,17 @@ def test_shortlist_not_found(client):
     assert client.get(
         "/discovery/shortlists/999999", headers=_auth(100, "brand")
     ).status_code == 404
+
+
+def test_list_shortlists(client):
+    client.post("/discovery/shortlists", headers=_auth(300, "brand"), json={"name": "A"})
+    client.post("/discovery/shortlists", headers=_auth(300, "brand"), json={"name": "B"})
+    r = client.get("/discovery/shortlists", headers=_auth(300, "brand"))
+    assert r.status_code == 200
+    names = [s["name"] for s in r.json() if s["brand_id"] == 300]
+    assert set(names) >= {"A", "B"}
+    # creators cannot list shortlists
+    assert (
+        client.get("/discovery/shortlists", headers=_auth(301, "creator")).status_code
+        == 403
+    )

@@ -57,6 +57,17 @@ async def get_shortlist(session: AsyncSession, shortlist_id: int) -> Optional[Sh
     return await session.get(Shortlist, shortlist_id)
 
 
+async def list_shortlists_for_brand(
+    session: AsyncSession, brand_id: int
+) -> List[Shortlist]:
+    result = await session.execute(
+        select(Shortlist)
+        .where(Shortlist.brand_id == brand_id)
+        .order_by(Shortlist.created_at.desc(), Shortlist.id.desc())
+    )
+    return list(result.scalars().all())
+
+
 async def list_shortlist_items(
     session: AsyncSession, shortlist_id: int
 ) -> List[ShortlistItem]:

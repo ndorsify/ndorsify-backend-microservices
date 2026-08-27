@@ -80,6 +80,15 @@ async def create_shortlist(
     return ShortlistResponse(id=sl.id, brand_id=sl.brand_id, name=sl.name)
 
 
+async def list_shortlists(
+    session: AsyncSession, brand_id: int
+) -> List[ShortlistResponse]:
+    rows = await repo.list_shortlists_for_brand(session, brand_id)
+    return [
+        ShortlistResponse(id=sl.id, brand_id=sl.brand_id, name=sl.name) for sl in rows
+    ]
+
+
 async def _owned_shortlist(
     session: AsyncSession, brand_id: int, shortlist_id: int
 ) -> Shortlist:

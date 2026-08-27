@@ -46,6 +46,14 @@ async def search_creators(
     )
 
 
+@router.get("/shortlists", response_model=List[ShortlistResponse])
+async def list_shortlists(
+    principal: Principal = Depends(require_role("brand")),
+    session: AsyncSession = Depends(get_session),
+) -> List[ShortlistResponse]:
+    return await service.list_shortlists(session, principal.user_id)
+
+
 @router.post("/shortlists", response_model=ShortlistResponse)
 async def create_shortlist(
     body: CreateShortlistRequest,

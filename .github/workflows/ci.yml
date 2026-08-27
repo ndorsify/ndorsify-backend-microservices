@@ -1,0 +1,40 @@
+name: CI
+
+# Runs each service's pytest suite (SQLite-backed, no Postgres needed).
+# ruff/black linting and a docker-compose build job are planned follow-ups
+# (see docs/plans/technical-specifications/e7-platform.md §4).
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - users-service
+          - dynamic-content-service
+          - profile-service
+          - messaging-service
+          - discovery-service
+    defaults:
+      run:
+        working-directory: microservices/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: microservices/${{ matrix.service }}/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest -q

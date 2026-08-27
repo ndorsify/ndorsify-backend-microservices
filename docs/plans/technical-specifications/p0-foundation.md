@@ -137,6 +137,7 @@ Two options for data:
 | Method | Path | Query params | Notes |
 |---|---|---|---|
 | GET | `/discovery/creators` | `q, niche[], min_followers, max_followers, platform, location, page, size, sort` | ranked results |
+| GET | `/discovery/shortlists` | | brand's shortlists |
 | POST | `/discovery/shortlists` | `{name}` | brand's saved list |
 | POST | `/discovery/shortlists/{id}/items` | `{creator_id}` | add to shortlist |
 | GET | `/discovery/shortlists/{id}` | | list contents |

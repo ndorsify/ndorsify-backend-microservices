@@ -13,7 +13,11 @@ and [ADR 0003](../../adr/0003-use-python-fastapi-and-postgres.md).
 | [e4-endorsements](e4-endorsements.md) | Endorsement requests, two-way reviews | endorsement | 7000 |
 | [e5-notifications](e5-notifications.md) | Event bus, in-app + email | notification | 8000 |
 | [e6-profiles-discovery](e6-profiles-discovery.md) | Socials, media kit, brand directory | profile, discovery | 6000/9000 |
-| [e7-platform](e7-platform.md) | Media storage, verification, search, CI | cross-cutting | — |
+| [e7-platform](e7-platform.md) | Media storage, verification, search, CI, **CORS** | cross-cutting | — |
+
+> **Frontend specs** live in the `ndorsify-app` repo under the same path
+> (`docs/plans/technical-specifications/`): `ui-foundation` and `p0-ui`. The SPA
+> requires **CORS on every service** — see [e7-platform §5](e7-platform.md).
 
 ## Shared conventions (all specs assume these)
 

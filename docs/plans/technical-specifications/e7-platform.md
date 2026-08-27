@@ -75,12 +75,43 @@ Plus a job that runs `docker compose build` to catch Dockerfile drift.
 
 ---
 
-## 5. Cross-cutting infra recap (for reference)
+## 5. Frontend enablement — CORS & base URLs (required for the SPA)
+
+The React client calls the services directly from the browser, so **every
+service must send CORS headers** or all calls fail. This is a hard prerequisite
+for any UI work (see the frontend `ui-foundation` spec in the `ndorsify-app`
+repo).
+
+- Add FastAPI **`CORSMiddleware`** to each service's `create_app()`, with
+  **allowed origins from env** (`CORS_ORIGINS`, comma-separated) — never `*`
+  once credentials/real origins are involved.
+  ```python
+  # app/main.py
+  from fastapi.middleware.cors import CORSMiddleware
+  app.add_middleware(
+      CORSMiddleware,
+      allow_origins=settings.cors_origins,   # e.g. ["http://localhost:3000"]
+      allow_credentials=True,
+      allow_methods=["*"],
+      allow_headers=["*"],
+  )
+  ```
+- Add `cors_origins: list[str]` to each `core/config.py` (default the local CRA
+  origin `http://localhost:3000`).
+- **Base-URL strategy:** until the API gateway lands, the SPA holds one base URL
+  **per service** (five ports); the gateway later collapses these to one origin,
+  which also simplifies CORS to a single allowed origin. This mirrors the
+  frontend's `REACT_APP_*_URL` config.
+- Because auth uses **Bearer tokens in a header** (not cookies), CSRF is not a
+  concern; keep tokens out of cookies to preserve that.
+
+## 6. Cross-cutting infra recap (for reference)
 - **Postgres** — already in compose; add a database per new service.
 - **Redis** — add to compose for: auth rate-limiting, notification dedupe/queue,
   and (later) real-time messaging fan-out.
 - **Service-to-service token** — a shared secret in env used by internal
   endpoints (E1→E3 create, producers→E5 ingest); distinct from user JWTs.
+- **CORS** — per service, origins from env (see §5).
 
 ## Tests
 Sign-upload rejects oversize/bad content-type; signed URL expiry; `require_verified`

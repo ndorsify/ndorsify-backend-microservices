@@ -79,5 +79,16 @@ services:
       postgres:
         condition: service_healthy
 
+  campaign-service:
+    build: ./microservices/campaign-service
+    environment:
+      PORT: 2000
+      DATABASE_URL: postgresql+asyncpg://ndorsify:ndorsify@postgres:5432/campaigndb
+    ports:
+      - "2000:2000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:

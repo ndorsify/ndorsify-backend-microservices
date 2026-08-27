@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_name: str = "messaging-service"
+    # Comma-separated origins allowed to call this service from a browser (CORS).
+    cors_origins: str = "http://localhost:3000"
     port: int = 3000
     database_url: str = "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/messagingdb"
 

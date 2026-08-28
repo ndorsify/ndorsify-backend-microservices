@@ -90,5 +90,16 @@ services:
       postgres:
         condition: service_healthy
 
+  collaboration-service:
+    build: ./microservices/collaboration-service
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgresql+asyncpg://ndorsify:ndorsify@postgres:5432/collaborationdb
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:

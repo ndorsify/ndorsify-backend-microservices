@@ -7,3 +7,4 @@ CREATE DATABASE profiledb;
 CREATE DATABASE messagingdb;
 CREATE DATABASE discoverydb;
 CREATE DATABASE campaigndb;
+CREATE DATABASE collaborationdb;

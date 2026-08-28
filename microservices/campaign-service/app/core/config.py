@@ -16,8 +16,11 @@ class Settings(BaseSettings):
     jwt_secret: str = "dev-insecure-change-me"
     jwt_algorithm: str = "HS256"
     # For internal calls this service makes (e.g. creating a collaboration on
-    # acceptance — E3, not built yet).
+    # acceptance).
     service_token: str = "dev-service-token-change-me"
+    # collaboration-service base URL; when set, an accepted invitation/application
+    # creates a Collaboration there. Empty (default/tests) disables the call.
+    collaboration_url: str = ""
 
 
 settings = Settings()

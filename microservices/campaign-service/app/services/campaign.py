@@ -11,6 +11,7 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..clients import collaboration as collaboration_client
 from ..models.campaign import Application, Campaign, Invitation
 from ..repositories import campaign as repo
 from ..schemas.campaign import (
@@ -24,6 +25,13 @@ from ..schemas.campaign import (
 
 def _now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _deliverable_specs(campaign: Campaign) -> list:
+    return [
+        {"platform": d.get("platform"), "type": d.get("type")}
+        for d in (campaign.deliverables or [])
+    ]
 
 
 def to_campaign_response(c: Campaign) -> CampaignResponse:
@@ -230,7 +238,15 @@ async def respond_invitation(
     invitation.status = decision
     invitation.responded_at = _now()
     saved = await repo.save(session, invitation)
-    # TODO(E3): on "accepted", create a Collaboration via collaboration-service.
+    if decision == "accepted":
+        campaign = await repo.get_campaign(session, invitation.campaign_id)
+        if campaign is not None:
+            await collaboration_client.create_collaboration(
+                campaign.id,
+                campaign.brand_id,
+                invitation.creator_id,
+                _deliverable_specs(campaign),
+            )
     # TODO(E5): emit invitation.accepted / invitation.declined
     return _to_invitation(saved)
 
@@ -281,6 +297,14 @@ async def decide_application(
     application.status = decision
     application.decided_at = _now()
     saved = await repo.save(session, application)
-    # TODO(E3): on "accepted", create a Collaboration via collaboration-service.
+    if decision == "accepted":
+        campaign = await repo.get_campaign(session, application.campaign_id)
+        if campaign is not None:
+            await collaboration_client.create_collaboration(
+                campaign.id,
+                campaign.brand_id,
+                application.creator_id,
+                _deliverable_specs(campaign),
+            )
     # TODO(E5): emit application.accepted / application.rejected
     return _to_application(saved)

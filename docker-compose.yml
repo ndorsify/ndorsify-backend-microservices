@@ -84,6 +84,7 @@ services:
     environment:
       PORT: 2000
       DATABASE_URL: postgresql+asyncpg://ndorsify:ndorsify@postgres:5432/campaigndb
+      COLLABORATION_URL: http://collaboration-service:4000
     ports:
       - "2000:2000"
     depends_on:

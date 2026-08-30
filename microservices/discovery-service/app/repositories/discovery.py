@@ -1,7 +1,7 @@
 """Data-access for discovery: creator index search and shortlists."""
 from typing import List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.discovery import CreatorIndex, Shortlist, ShortlistItem
@@ -19,9 +19,13 @@ async def search_creators(
     *,
     q: Optional[str],
     niches: List[str],
+    platforms: List[str],
     min_followers: Optional[int],
     max_followers: Optional[int],
     min_engagement: Optional[float],
+    min_rate: Optional[int],
+    max_rate: Optional[int],
+    verified: Optional[bool],
     location: Optional[str],
     sort: str,
     offset: int,
@@ -30,15 +34,40 @@ async def search_creators(
     stmt = select(CreatorIndex)
 
     if q:
-        stmt = stmt.where(CreatorIndex.display_name.ilike(f"%{q}%"))
+        # Free-text over name, handle, niches, and location.
+        like = f"%{q.lower()}%"
+        stmt = stmt.where(
+            or_(
+                func.lower(CreatorIndex.display_name).like(like),
+                func.lower(CreatorIndex.handle).like(like),
+                CreatorIndex.niches_text.like(like),
+                func.lower(CreatorIndex.location).like(like),
+            )
+        )
     for niche in niches:
         stmt = stmt.where(CreatorIndex.niches_text.like(f"%{niche.lower()}%"))
+    # Platforms: match a creator carrying ANY of the requested platforms.
+    if platforms:
+        stmt = stmt.where(
+            or_(
+                *(
+                    CreatorIndex.platforms_text.like(f"%{p.lower()}%")
+                    for p in platforms
+                )
+            )
+        )
     if min_followers is not None:
         stmt = stmt.where(CreatorIndex.follower_count >= min_followers)
     if max_followers is not None:
         stmt = stmt.where(CreatorIndex.follower_count <= max_followers)
     if min_engagement is not None:
         stmt = stmt.where(CreatorIndex.engagement_rate >= min_engagement)
+    if min_rate is not None:
+        stmt = stmt.where(CreatorIndex.rate_per_post >= min_rate)
+    if max_rate is not None:
+        stmt = stmt.where(CreatorIndex.rate_per_post <= max_rate)
+    if verified:
+        stmt = stmt.where(CreatorIndex.verified.is_(True))
     if location:
         stmt = stmt.where(CreatorIndex.location.ilike(f"%{location}%"))
 

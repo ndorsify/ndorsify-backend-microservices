@@ -14,6 +14,7 @@ from typing import Optional
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     DateTime,
     Float,
     ForeignKey,
@@ -36,9 +37,12 @@ class CreatorIndex(Base):
         Integer, unique=True, index=True, nullable=False
     )
     display_name: Mapped[Optional[str]] = mapped_column(String, index=True, nullable=True)
+    handle: Mapped[Optional[str]] = mapped_column(String, index=True, nullable=True)
     bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     niches: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     niches_text: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    platforms: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    platforms_text: Mapped[str] = mapped_column(Text, default="", nullable=False)
     location: Mapped[Optional[str]] = mapped_column(String, index=True, nullable=True)
     follower_count: Mapped[int] = mapped_column(
         Integer, default=0, server_default="0", nullable=False
@@ -48,6 +52,12 @@ class CreatorIndex(Base):
     )
     avg_rating: Mapped[float] = mapped_column(
         Float, default=0.0, server_default="0", nullable=False
+    )
+    rate_per_post: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+    verified: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now(), nullable=False

@@ -22,9 +22,13 @@ router = APIRouter(prefix="/discovery", tags=["discovery"])
 async def search_creators(
     q: Optional[str] = Query(None),
     niche: List[str] = Query(default_factory=list),
+    platform: List[str] = Query(default_factory=list),
     min_followers: Optional[int] = Query(None, ge=0),
     max_followers: Optional[int] = Query(None, ge=0),
     min_engagement: Optional[float] = Query(None, ge=0),
+    min_rate: Optional[int] = Query(None, ge=0),
+    max_rate: Optional[int] = Query(None, ge=0),
+    verified: Optional[bool] = Query(None),
     location: Optional[str] = Query(None),
     sort: str = Query("followers", pattern="^(followers|engagement|rating)$"),
     page: int = Query(0, ge=0),
@@ -36,14 +40,27 @@ async def search_creators(
         session,
         q=q,
         niches=niche,
+        platforms=platform,
         min_followers=min_followers,
         max_followers=max_followers,
         min_engagement=min_engagement,
+        min_rate=min_rate,
+        max_rate=max_rate,
+        verified=verified,
         location=location,
         sort=sort,
         page=page,
         size=size,
     )
+
+
+@router.get("/creators/{user_id}", response_model=CreatorResult)
+async def get_creator(
+    user_id: int,
+    _principal: Principal = Depends(require_auth),
+    session: AsyncSession = Depends(get_session),
+) -> CreatorResult:
+    return await service.get_creator(session, user_id)
 
 
 @router.get("/shortlists", response_model=List[ShortlistResponse])

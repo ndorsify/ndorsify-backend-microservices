@@ -19,11 +19,15 @@ def _to_result(c: CreatorIndex) -> CreatorResult:
     return CreatorResult(
         user_id=c.user_id,
         display_name=c.display_name,
+        handle=c.handle,
         niches=c.niches or [],
+        platforms=c.platforms or [],
         location=c.location,
         follower_count=c.follower_count,
         engagement_rate=c.engagement_rate,
         avg_rating=c.avg_rating,
+        rate_per_post=c.rate_per_post,
+        verified=c.verified,
     )
 
 
@@ -35,13 +39,18 @@ async def upsert_creator_index(
     if c is None:
         c = CreatorIndex(user_id=dto.user_id)
     c.display_name = dto.display_name
+    c.handle = dto.handle
     c.bio = dto.bio
     c.niches = dto.niches
     c.niches_text = " ".join(n.lower() for n in dto.niches)
+    c.platforms = dto.platforms
+    c.platforms_text = " ".join(p.lower() for p in dto.platforms)
     c.location = dto.location
     c.follower_count = dto.follower_count
     c.engagement_rate = dto.engagement_rate
     c.avg_rating = dto.avg_rating
+    c.rate_per_post = dto.rate_per_post
+    c.verified = dto.verified
     return _to_result(await repo.save(session, c))
 
 
@@ -50,9 +59,13 @@ async def search_creators(
     *,
     q: Optional[str],
     niches: List[str],
+    platforms: List[str],
     min_followers: Optional[int],
     max_followers: Optional[int],
     min_engagement: Optional[float],
+    min_rate: Optional[int],
+    max_rate: Optional[int],
+    verified: Optional[bool],
     location: Optional[str],
     sort: str,
     page: int,
@@ -62,15 +75,26 @@ async def search_creators(
         session,
         q=q,
         niches=niches,
+        platforms=platforms,
         min_followers=min_followers,
         max_followers=max_followers,
         min_engagement=min_engagement,
+        min_rate=min_rate,
+        max_rate=max_rate,
+        verified=verified,
         location=location,
         sort=sort,
         offset=page * size,
         limit=size,
     )
     return [_to_result(r) for r in rows]
+
+
+async def get_creator(session: AsyncSession, user_id: int) -> CreatorResult:
+    c = await repo.get_creator(session, user_id)
+    if c is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Creator not found")
+    return _to_result(c)
 
 
 async def create_shortlist(

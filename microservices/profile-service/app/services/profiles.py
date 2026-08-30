@@ -4,6 +4,7 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..clients import discovery as discovery_client
 from ..models.profiles import BrandProfile, CreatorProfile
 from ..repositories import profiles as repo
 from ..schemas.profiles import (
@@ -71,7 +72,17 @@ async def upsert_creator(
     for key, value in dto.model_dump(exclude_unset=True).items():
         setattr(p, key, value)
     p.completion_pct = _completion(p, _CREATOR_REQUIRED)
-    return _creator_response(await repo.save(session, p))
+    saved = await repo.save(session, p)
+    # Best-effort: make the creator searchable in discovery (stand-in for a
+    # profile.updated event). Never fails the profile save.
+    await discovery_client.upsert_creator_index(
+        user_id=saved.user_id,
+        display_name=saved.display_name,
+        bio=saved.bio,
+        niches=saved.niches or [],
+        location=saved.location,
+    )
+    return _creator_response(saved)
 
 
 async def get_brand(

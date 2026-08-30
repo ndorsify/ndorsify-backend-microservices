@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
+from .db.seed import seed_creator_index
 from .db.session import init_db
 from .routers import discovery, internal
 
@@ -16,6 +17,8 @@ from .routers import discovery, internal
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    if settings.seed_on_start:
+        await seed_creator_index()
     yield
 
 

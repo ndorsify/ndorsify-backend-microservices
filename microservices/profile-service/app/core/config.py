@@ -16,5 +16,12 @@ class Settings(BaseSettings):
     jwt_secret: str = "dev-insecure-change-me"
     jwt_algorithm: str = "HS256"
 
+    # --- Discovery ingest (best-effort) ---
+    # When a creator saves their profile we push it to discovery-service's
+    # creator index so they become searchable. Unset URL disables the call
+    # (tests / isolated runs). Token must match discovery-service's SERVICE_TOKEN.
+    discovery_url: str = ""
+    service_token: str = "dev-service-token-change-me"
+
 
 settings = Settings()

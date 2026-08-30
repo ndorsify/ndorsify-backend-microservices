@@ -19,5 +19,9 @@ class Settings(BaseSettings):
     # Used by the creator-index ingest endpoint (fed by profile updates).
     service_token: str = "dev-service-token-change-me"
 
+    # Seed a starter creator catalog on startup (dev/demo). Off by default so
+    # tests start from an empty index; the local stack enables it.
+    seed_on_start: bool = False
+
 
 settings = Settings()

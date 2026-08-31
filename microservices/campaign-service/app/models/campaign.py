@@ -45,6 +45,9 @@ class Campaign(Base):
         String, default="draft", server_default="draft", index=True, nullable=False
     )
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    # Set once via POST /campaigns/{id}/fund — a real, idempotent acknowledgment
+    # with no payment processing behind it (Phase 5 payments-service, unbuilt).
+    funded_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )

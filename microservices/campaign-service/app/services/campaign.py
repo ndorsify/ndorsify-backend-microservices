@@ -49,6 +49,7 @@ def to_campaign_response(c: Campaign) -> CampaignResponse:
         target_audience=c.target_audience or {},
         status=c.status,
         published_at=c.published_at,
+        funded_at=c.funded_at,
     )
 
 
@@ -166,6 +167,27 @@ async def close_campaign(
         )
     campaign.status = "closed"
     return to_campaign_response(await repo.save(session, campaign))
+
+
+async def fund_campaign(
+    session: AsyncSession, brand_id: int, campaign_id: int
+) -> CampaignResponse:
+    """Record a funding acknowledgment — no real payment processing (Phase 5
+    payments-service, not built yet). Idempotent: re-confirming an already
+    -funded campaign is a no-op, not an error, since there's no charge to
+    duplicate. Deliberately does not touch `status` — marketplace visibility
+    and everything else keyed on `status == "open"` must be unaffected.
+    """
+    campaign = await _owned_campaign(session, brand_id, campaign_id)
+    if campaign.status != "open":
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Campaign must be published before it can be funded",
+        )
+    if campaign.funded_at is None:
+        campaign.funded_at = _now()
+        campaign = await repo.save(session, campaign)
+    return to_campaign_response(campaign)
 
 
 async def list_mine(

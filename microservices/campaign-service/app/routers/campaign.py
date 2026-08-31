@@ -94,6 +94,15 @@ async def close_campaign(
     return await service.close_campaign(session, principal.user_id, campaign_id)
 
 
+@router.post("/campaigns/{campaign_id}/fund", response_model=CampaignResponse)
+async def fund_campaign(
+    campaign_id: int,
+    principal: Principal = Depends(require_role("brand")),
+    session: AsyncSession = Depends(get_session),
+) -> CampaignResponse:
+    return await service.fund_campaign(session, principal.user_id, campaign_id)
+
+
 # --- invitations ------------------------------------------------------------
 @router.post("/campaigns/{campaign_id}/invitations", response_model=InvitationResponse)
 async def invite(

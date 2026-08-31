@@ -164,3 +164,46 @@ def test_cannot_apply_to_draft(client):
 
 def test_marketplace_requires_auth(client):
     assert client.get("/campaigns").status_code in (401, 403)
+
+
+# --- funding ------------------------------------------------------------
+def test_fund_requires_open(client):
+    cid = _create(client, 90).json()["id"]  # still draft
+    assert client.post(f"/campaigns/{cid}/fund", headers=_auth(90, "brand")).status_code == 409
+
+
+def test_fund_marks_funded_at_idempotently(client):
+    cid = _create_open(client, 91)
+    r1 = client.post(f"/campaigns/{cid}/fund", headers=_auth(91, "brand"))
+    assert r1.status_code == 200 and r1.json()["funded_at"]
+    first_ts = r1.json()["funded_at"]
+    r2 = client.post(f"/campaigns/{cid}/fund", headers=_auth(91, "brand"))
+    assert r2.status_code == 200 and r2.json()["funded_at"] == first_ts  # idempotent
+    assert r2.json()["status"] == "open"  # status untouched by funding
+
+
+def test_fund_requires_owner(client):
+    cid = _create_open(client, 92)
+    assert client.post(f"/campaigns/{cid}/fund", headers=_auth(93, "brand")).status_code == 403
+
+
+# --- validation --------------------------------------------------------
+def test_create_rejects_end_before_start(client):
+    bad = dict(COMPLETE, starts_on="2026-09-30", ends_on="2026-09-01")
+    assert _create(client, 94, bad).status_code == 422
+
+
+def test_deliverable_usage_and_approval_round_trip(client):
+    payload = dict(COMPLETE)
+    payload["deliverables"] = [
+        {
+            "platform": "instagram",
+            "type": "post",
+            "quantity": 2,
+            "usage": "Paid ads 30d",
+            "requires_approval": False,
+        }
+    ]
+    r = _create(client, 95, payload)
+    assert r.json()["deliverables"][0]["usage"] == "Paid ads 30d"
+    assert r.json()["deliverables"][0]["requires_approval"] is False

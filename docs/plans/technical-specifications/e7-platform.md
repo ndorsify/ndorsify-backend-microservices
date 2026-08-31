@@ -1,6 +1,9 @@
 # E7 · Platform & foundations (cross-cutting)
 
-**Status:** Proposed · Infrastructure and tooling several epics depend on.
+**Status:** 🟡 §5 CORS is done. Everything else is open — see
+[phase-7-platform-hardening-launch](../../../../docs/phases/phase-7-platform-hardening-launch.md)
+for current state, including launch-operational items (legal, observability,
+deploy path) added there that this spec doesn't cover.
 
 ---
 

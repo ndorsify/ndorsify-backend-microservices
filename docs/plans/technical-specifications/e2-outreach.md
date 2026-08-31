@@ -1,6 +1,8 @@
 # E2 · Outreach upgrades  `messaging-service` (:3000)
 
-**Status:** Proposed · **Depends on:** P0 base messaging ([p0-foundation](p0-foundation.md) §3).
+**Status:** ⬜ Not started · See
+[phase-6-notifications-outreach](../../../../docs/phases/phase-6-notifications-outreach.md).
+**Depends on:** P0 base messaging (done — [p0-foundation](p0-foundation.md) §3).
 
 Adds reusable outreach templates and campaign context to the existing 1:1 inbox.
 

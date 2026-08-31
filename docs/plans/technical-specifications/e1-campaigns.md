@@ -1,7 +1,8 @@
-# E1 · Campaigns  `campaign-service` (:2000, new)
+# E1 · Campaigns  `campaign-service` (:2000)
 
-**Status:** Proposed · **Depends on:** P0 auth/roles; profiles & discovery for the
-full experience (invitations need shortlists, applications need creator profiles).
+**Status:** ✅ Implemented, verified E2E through the UI · See
+[phase-1-marketplace-core](../../../../docs/phases/phase-1-marketplace-core.md)
+for current state, a frontend bug punch-list, and what's still open.
 
 The spine of the marketplace: a brand publishes a brief, invites or receives
 creators, and manages applications.

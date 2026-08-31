@@ -1,9 +1,11 @@
 # P0 · Foundation
 
-**Status:** Proposed · **Blocks:** all of Phase 1
+**Status:** ✅ Implemented (OAuth still returns 501) · See
+[phase-0-foundation](../../../../docs/phases/phase-0-foundation.md) for
+current state and open follow-ups.
 
-Covers the todo's "Phase 0 prerequisites": authentication, roles, profiles, and
-the base messaging & discovery services that Phase 1 epics extend.
+Covers authentication, roles, profiles, and the base messaging & discovery
+services that later epics extend.
 
 ---
 

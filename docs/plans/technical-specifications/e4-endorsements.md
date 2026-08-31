@@ -1,7 +1,9 @@
 # E4 · Endorsements & reviews  `endorsement-service` (:7000, new)
 
-**Status:** Proposed · **Depends on:** E3 (reviews gate on a completed
-collaboration); E6 (aggregate rating surfaces on profiles).
+**Status:** ⬜ Not started · See
+[phase-4-endorsements-reviews](../../../../docs/phases/phase-4-endorsements-reviews.md).
+**Depends on:** E3 (done — reviews gate on a completed collaboration); E6
+(aggregate rating surfaces on profiles, still open).
 
 The product's namesake loop: a brand requests an endorsement, the creator
 fulfills it, and both sides review each other once the work is live.

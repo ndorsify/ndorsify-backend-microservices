@@ -12,17 +12,28 @@ for the "why" behind decisions see [`docs/adr/`](docs/adr/).
 ## What this is
 
 The Ndorsify backend: independently-deployable services behind a two-sided
-brand ↔ creator platform. Three services exist today, each a standalone module
-under `microservices/`. There is **no aggregator/parent build** — services do
-not share code and are built/run individually.
+brand ↔ creator platform. **Seven services exist today**, each a standalone
+module under `microservices/`. There is **no aggregator/parent build** — no
+API gateway, no shared code, no message broker; services call each other
+directly over `httpx` where needed (e.g. campaign → collaboration on accept,
+profile → discovery on save) and are built/run individually. See the
+workspace-root [`MVP-ROADMAP.md`](../MVP-ROADMAP.md) for what's built vs. what
+phase adds what next.
 
 ## Services
 
 | Service | Port | Base path | Purpose | State |
 |---|---|---|---|---|
-| `users-service` | 1000 | `/users` | User CRUD with pagination/sorting | Live |
-| `dynamic-content-service` | 5000 | `/onboard/creator` | Server-driven onboarding questions | Live |
-| `profile-service` | 6060 | — | Profiles | Skeleton (health only, no routes yet) |
+| `users-service` | 1000 | `/auth`, `/users` | Auth (register/login/refresh/logout, verify-email, password reset), roles | Live (OAuth routes stubbed, 501) |
+| `campaign-service` | 2000 | `/campaigns` | Briefs, invitations, applications, marketplace listing | Live |
+| `collaboration-service` | 4000 | `/collaborations` | Deliverables, submissions, review pipeline | Live (file uploads are refs-only, no storage yet) |
+| `messaging-service` | 3000 | `/conversations` | 1:1 inbox, poll-based | Live |
+| `discovery-service` | 9000 | `/discovery` | Creator search/filters, shortlists, creator lookup | Live |
+| `profile-service` | 6060 | `/profiles` | Creator/brand profile CRUD, completion %, pushes to discovery on save | Live (rate cards, media kit, social stats not yet built) |
+| `dynamic-content-service` | 5000 | `/onboard` | Server-driven onboarding questions | Live |
+
+Not yet built: `endorsement-service` (:7000), `payments-service` (:10000),
+`notification-service` (:8000) — see phases 4/5/6 in `MVP-ROADMAP.md`.
 
 ## Patterns (Python/FastAPI)
 
@@ -49,22 +60,26 @@ Each service is a standalone FastAPI app under `microservices/<service>/app/`:
   (port of the Java `data.sql`). Tests run against SQLite (`aiosqlite`).
 - **Docs:** each service exposes Swagger UI at `/api-docs.html` (FastAPI
   `docs_url`), plus a `/health` endpoint.
-- Services don't call each other yet. Inter-service calls become HTTP clients
-  (e.g. `httpx`) when needed.
+- **Inter-service calls** are direct `httpx` calls authenticated with a shared
+  service-to-service token (distinct from user JWTs) — e.g.
+  `campaign-service` → `collaboration-service` on acceptance,
+  `profile-service` → `discovery-service` on profile save. No broker, no
+  gateway.
 
 ## Known issues / follow-ups
 
-- `users-service` and `dynamic-content-service` have an initial Alembic
-  migration (`0001_initial`); `profile-service` has the Alembic scaffolding but
-  no migration yet (no models). Author its first migration when the profile
-  model lands (`alembic revision --autogenerate`).
+- OAuth login (`users-service`) is stubbed — routes exist but return 501.
+- `collaboration-service` submissions store storage-key refs with no real
+  object storage behind them yet (Phase 7 in `MVP-ROADMAP.md`).
+- No lint (`ruff`/`black`) or CI beyond per-service `pytest` — see
+  [phase-7](../docs/phases/phase-7-platform-hardening-launch.md).
 
 ## Guidance for new work
 
-- Keep the existing service boundaries and ports (1000 / 5000 / 6060) and the
-  established HTTP contracts.
-- New services follow the phased feature plan (kept at the workspace root) and
-  reuse the layering above.
+- Keep the existing service boundaries and ports and the established HTTP
+  contracts (see the services table above).
+- New services follow the phased roadmap at the workspace root
+  (`MVP-ROADMAP.md` + `docs/phases/`) and reuse the layering above.
 
 ## Knowledge base
 

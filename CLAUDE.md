@@ -11,9 +11,13 @@ Command reference for the Ndorsify backend services. For architecture see
 > service is a standalone FastAPI app under `microservices/<service>/`; the
 > original Java sources have been removed.
 
-## Run everything (Docker)
+## Run everything
 
-From the repo root — brings up Postgres (three databases) + all three services.
+**Fastest path (SQLite, no Docker/Postgres):** from the workspace root, one
+level up from this repo, `./start.sh` boots all 7 services plus the web
+client. See `../MVP-ROADMAP.md` for what each service does.
+
+**Docker (Postgres):** from this repo root — brings up Postgres + services.
 Each container runs `alembic upgrade head` and seeds on start, so no manual
 migration step is needed:
 
@@ -21,8 +25,7 @@ migration step is needed:
 docker compose up --build
 ```
 
-Services: `users-service` :1000 · `dynamic-content-service` :5000 ·
-`profile-service` :6060. Swagger UI per service at `/api-docs.html`.
+Swagger UI per service at `/api-docs.html`. See the ports table below.
 
 ## Run a single service (Python / FastAPI)
 
@@ -65,5 +68,7 @@ is separate from migrations.
 
 ## Ports
 
-`users-service` 1000 · `dynamic-content-service` 5000 · `profile-service` 6060.
+`users-service` 1000 · `campaign-service` 2000 · `messaging-service` 3000
+(3001 in `start.sh`) · `collaboration-service` 4000 · `dynamic-content-service`
+5000 (5001 in `start.sh`) · `profile-service` 6060 · `discovery-service` 9000.
 Swagger UI per service at `/api-docs.html`.

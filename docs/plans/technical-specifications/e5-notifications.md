@@ -1,6 +1,8 @@
 # E5 · Notifications  `notification-service` (:8000, new)
 
-**Status:** Proposed · **Consumes events from:** E1, E3, E4, and base messaging.
+**Status:** ⬜ Not started · See
+[phase-6-notifications-outreach](../../../../docs/phases/phase-6-notifications-outreach.md).
+**Consumes events from:** E1, E3, E4, and base messaging.
 
 The single fan-out point: every meaningful state change becomes an in-app
 notification and (optionally) an email.

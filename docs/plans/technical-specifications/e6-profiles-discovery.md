@@ -1,7 +1,11 @@
 # E6 · Profile & discovery upgrades  `profile-service` (:6060) · `discovery-service` (:9000)
 
-**Status:** Proposed · **Depends on:** P0 profiles & discovery base; E7 media
-storage (media kit); E4 aggregate rating.
+**Status:** 🟡 §4's creator-index base (search, filters, seed catalog) shipped
+in [Phase 1](../../../../docs/phases/phase-1-marketplace-core.md). §1–2 (social
+stats, media kit, rate cards) and the rest of §4 (brand directory) are
+[Phase 3](../../../../docs/phases/phase-3-profile-discovery-depth.md), not yet
+started. **Depends on:** E7 media storage (media kit uploads); E4 aggregate
+rating (sort-by-rating).
 
 Turns bare profiles into campaign-ready ones and adds the brand directory.
 

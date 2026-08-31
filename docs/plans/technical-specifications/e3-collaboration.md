@@ -1,7 +1,9 @@
-# E3 · Collaboration tracking  `collaboration-service` (:4000, new)
+# E3 · Collaboration tracking  `collaboration-service` (:4000)
 
-**Status:** Proposed · **Depends on:** E1 (campaigns create collaborations on
-acceptance); E7 media storage (for submission files).
+**Status:** ✅ Implemented, verified E2E · See
+[phase-2-collaboration](../../../../docs/phases/phase-2-collaboration.md).
+**Still open:** E7 media storage — submissions carry ref keys with no real
+storage behind them yet.
 
 Tracks an accepted brand↔creator engagement from kickoff to live content.
 

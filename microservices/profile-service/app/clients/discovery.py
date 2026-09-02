@@ -5,10 +5,13 @@ event. If the URL is unset (tests / isolated runs) the call is skipped; if it
 fails, the profile save still succeeds (a production impl would enqueue a retry
 rather than swallow the error).
 
-Note: audience metrics (followers, engagement, rating) are not on the creator
-profile yet — they arrive with connected-platform stats (E6). Until then the
-index carries the identity/niche fields and leaves metrics at their defaults,
-so a freshly-onboarded creator is discoverable by name and niche.
+The ingest endpoint (`PUT /internal/creator-index`) is a full replace, not a
+partial merge — every field on the request overwrites the stored row. Callers
+must always send the complete current picture (identity fields *and* social
+stats), never just the fields that changed, or they'll silently wipe out
+whatever the other side last set. `services/profiles.py`'s `_aggregate_and_push`
+is the one place that assembles that full picture; nothing else should call
+this function directly.
 """
 import logging
 from typing import List, Optional
@@ -24,18 +27,28 @@ async def upsert_creator_index(
     *,
     user_id: int,
     display_name: Optional[str],
+    handle: Optional[str] = None,
     bio: Optional[str],
     niches: List[str],
+    platforms: Optional[List[str]] = None,
     location: Optional[str],
+    follower_count: int = 0,
+    engagement_rate: float = 0.0,
+    verified: bool = False,
 ) -> None:
     if not settings.discovery_url:
         return
     payload = {
         "user_id": user_id,
         "display_name": display_name,
+        "handle": handle,
         "bio": bio,
         "niches": niches,
+        "platforms": platforms or [],
         "location": location,
+        "follower_count": follower_count,
+        "engagement_rate": engagement_rate,
+        "verified": verified,
     }
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:

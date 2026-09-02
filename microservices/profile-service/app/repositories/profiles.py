@@ -1,10 +1,10 @@
 """Data-access for profiles."""
-from typing import Optional
+from typing import List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.profiles import BrandProfile, CreatorProfile
+from ..models.profiles import BrandProfile, CreatorProfile, SocialAccount
 
 
 async def get_creator(session: AsyncSession, user_id: int) -> Optional[CreatorProfile]:
@@ -26,3 +26,32 @@ async def save(session: AsyncSession, profile):
     await session.commit()
     await session.refresh(profile)
     return profile
+
+
+async def list_social_accounts(
+    session: AsyncSession, user_id: int
+) -> List[SocialAccount]:
+    result = await session.execute(
+        select(SocialAccount).where(SocialAccount.user_id == user_id)
+    )
+    return list(result.scalars().all())
+
+
+async def get_social_account(
+    session: AsyncSession, user_id: int, platform: str
+) -> Optional[SocialAccount]:
+    result = await session.execute(
+        select(SocialAccount).where(
+            SocialAccount.user_id == user_id, SocialAccount.platform == platform
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def delete_social_account(session: AsyncSession, user_id: int, platform: str) -> None:
+    await session.execute(
+        delete(SocialAccount).where(
+            SocialAccount.user_id == user_id, SocialAccount.platform == platform
+        )
+    )
+    await session.commit()

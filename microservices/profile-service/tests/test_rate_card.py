@@ -6,6 +6,7 @@ same pattern as test_social.py.
 import os
 
 import jwt
+import pytest
 
 
 def _auth(user_id: int, role: str = "creator") -> dict:
@@ -166,3 +167,81 @@ def test_public_read_of_a_missing_card_is_empty_not_404(client):
     r = client.get("/profiles/creators/9999/rate-card")
     assert r.status_code == 200
     assert r.json() == {"packages": []}
+
+
+# --- discovery push ----------------------------------------------------------
+@pytest.fixture()
+def pushes(monkeypatch):
+    """Capture what would be sent to discovery-service's creator index."""
+    captured = []
+
+    async def fake_upsert(**kwargs):
+        captured.append(kwargs)
+
+    monkeypatch.setattr(
+        "app.clients.discovery.upsert_creator_index", fake_upsert
+    )
+    return captured
+
+
+def test_save_pushes_the_lowest_visible_price(client, pushes):
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(220),
+        json={
+            "hidden": False,
+            "packages": [
+                _package(name="Bundle", price=3200),
+                _package(name="Cheapest", price=900),
+                _package(name="Invisible", price=100, visible=False),
+            ],
+        },
+    )
+    assert pushes[-1]["rate_per_post"] == 900
+
+
+def test_hidden_card_pushes_zero(client, pushes):
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(221),
+        json={"hidden": True, "packages": [_package(price=900)]},
+    )
+    assert pushes[-1]["rate_per_post"] == 0
+
+
+def test_all_invisible_packages_push_zero(client, pushes):
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(222),
+        json={"hidden": False, "packages": [_package(price=900, visible=False)]},
+    )
+    assert pushes[-1]["rate_per_post"] == 0
+
+
+def test_a_later_profile_save_keeps_the_rate(client, pushes):
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(223),
+        json={"hidden": False, "packages": [_package(price=900)]},
+    )
+    client.put(
+        "/profiles/creators/me",
+        headers=_auth(223),
+        json={"display_name": "Ada", "bio": "Skincare"},
+    )
+    assert pushes[-1]["rate_per_post"] == 900
+
+
+def test_a_social_connect_keeps_the_rate(client, pushes):
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(224),
+        json={"hidden": False, "packages": [_package(price=900)]},
+    )
+    start = client.get("/social/instagram/connect", headers=_auth(224))
+    state = start.json()["connect_url"].split("state=")[1]
+    client.get(
+        "/social/instagram/callback",
+        params={"state": state, "external_account_id": "ext-224"},
+    )
+    assert pushes[-1]["rate_per_post"] == 900

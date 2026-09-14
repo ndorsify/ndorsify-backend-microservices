@@ -10,6 +10,7 @@ from ..schemas.rate_cards import (
     RateCardResponse,
     RateCardUpdate,
 )
+from .profiles import aggregate_and_push
 
 
 def _package_out(p: RateCardPackage) -> RateCardPackageIn:
@@ -44,6 +45,8 @@ async def save(
         hidden=dto.hidden,
         packages=[p.model_dump() for p in dto.packages],
     )
+    # Keeps discovery's rate_per_post in step with the card.
+    await aggregate_and_push(session, user_id)
     return await get_for_owner(session, user_id)
 
 

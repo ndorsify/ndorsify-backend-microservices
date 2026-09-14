@@ -26,6 +26,7 @@ def _ingest(client, **kw):
             "niches": kw.get("niches", []), "location": kw.get("location"),
             "follower_count": kw.get("follower_count", 0),
             "engagement_rate": kw.get("engagement_rate", 0.0),
+            "rate_per_post": kw.get("rate_per_post", 0),
             "avg_rating": kw.get("avg_rating", 0.0)}
     return client.put("/internal/creator-index", headers=_svc(), json=body)
 
@@ -139,3 +140,24 @@ def test_list_shortlists(client):
         client.get("/discovery/shortlists", headers=_auth(301, "creator")).status_code
         == 403
     )
+
+
+# --- rate filter -------------------------------------------------------------
+def test_rate_filters_exclude_creators_without_a_rate(client):
+    _ingest(client, user_id=901, display_name="Priced", rate_per_post=1200)
+    _ingest(client, user_id=902, display_name="Unpriced", rate_per_post=0)
+
+    names = lambda r: {c["display_name"] for c in r.json()}
+
+    max_only = client.get("/discovery/creators", params={"max_rate": 2000}, headers=_auth(1))
+    assert "Priced" in names(max_only)
+    assert "Unpriced" not in names(max_only)
+
+    min_only = client.get("/discovery/creators", params={"min_rate": 100}, headers=_auth(1))
+    assert "Unpriced" not in names(min_only)
+
+
+def test_unfiltered_search_still_includes_unpriced_creators(client):
+    _ingest(client, user_id=903, display_name="Also unpriced", rate_per_post=0)
+    r = client.get("/discovery/creators", headers=_auth(1))
+    assert "Also unpriced" in {c["display_name"] for c in r.json()}

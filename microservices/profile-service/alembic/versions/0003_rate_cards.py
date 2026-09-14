@@ -22,9 +22,8 @@ def upgrade() -> None:
         sa.Column(
             "updated_at", sa.DateTime(), server_default=sa.func.now(), nullable=False
         ),
-        sa.UniqueConstraint("user_id", name="uq_rate_card_user"),
     )
-    op.create_index("ix_rate_cards_user_id", "rate_cards", ["user_id"])
+    op.create_index("ix_rate_cards_user_id", "rate_cards", ["user_id"], unique=True)
     op.create_table(
         "rate_card_packages",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),

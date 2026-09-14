@@ -67,3 +67,10 @@ def test_more_than_ten_packages_is_rejected():
 def test_name_is_trimmed():
     card = _card(packages=[_package(name="  Launch bundle  ")])
     assert card.packages[0].name == "Launch bundle"
+
+
+def test_name_with_padding_within_limit_is_accepted():
+    """Name with 81 raw chars (spaces + content) but 79 after trimming is valid."""
+    card = _card(packages=[_package(name="  " + "x" * 79)])
+    assert card.packages[0].name == "x" * 79
+    assert len(card.packages[0].name) == 79

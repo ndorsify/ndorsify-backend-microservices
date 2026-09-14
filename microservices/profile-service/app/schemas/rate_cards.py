@@ -28,13 +28,10 @@ class RateCardPackageIn(BaseModel):
     visible: bool = True
     items: List[RateCardItem] = Field(..., min_length=1, max_length=10)
 
-    @field_validator("name")
+    @field_validator("name", mode="before")
     @classmethod
-    def _trim_name(cls, value: str) -> str:
-        trimmed = value.strip()
-        if not trimmed:
-            raise ValueError("name must not be blank")
-        return trimmed
+    def _trim_name(cls, value):
+        return value.strip() if isinstance(value, str) else value
 
 
 class RateCardUpdate(BaseModel):

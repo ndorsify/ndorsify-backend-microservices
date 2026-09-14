@@ -33,3 +33,96 @@ def test_rate_card_tables_are_registered():
         "visible",
         "items",
     } <= set(packages.columns.keys())
+
+
+def _package(**kw):
+    return {
+        "name": "Single Reel",
+        "price": 1600,
+        "description": "1 Reel, 30-45s",
+        "turnaround_days": 5,
+        "visible": True,
+        "items": [{"platform": "instagram", "type": "reel", "quantity": 1}],
+        **kw,
+    }
+
+
+# --- owner read / replace ----------------------------------------------------
+def test_owner_with_no_card_gets_an_empty_card(client):
+    r = client.get("/profiles/creators/me/rate-card", headers=_auth(200))
+    assert r.status_code == 200, r.text
+    assert r.json() == {"hidden": False, "packages": [], "updated_at": None}
+
+
+def test_save_then_read_round_trips(client):
+    body = {
+        "hidden": False,
+        "packages": [
+            _package(),
+            _package(name="Launch bundle", price=3200, visible=False),
+        ],
+    }
+    saved = client.put(
+        "/profiles/creators/me/rate-card", headers=_auth(201), json=body
+    )
+    assert saved.status_code == 200, saved.text
+
+    read = client.get("/profiles/creators/me/rate-card", headers=_auth(201)).json()
+    assert [p["name"] for p in read["packages"]] == ["Single Reel", "Launch bundle"]
+    assert read["packages"][1]["visible"] is False
+    assert read["packages"][0]["items"][0]["type"] == "reel"
+    assert read["updated_at"] is not None
+
+
+def test_save_replaces_the_whole_card(client):
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(202),
+        json={"hidden": False, "packages": [_package(), _package(name="Second")]},
+    )
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(202),
+        json={"hidden": True, "packages": [_package(name="Only one")]},
+    )
+
+    read = client.get("/profiles/creators/me/rate-card", headers=_auth(202)).json()
+    assert [p["name"] for p in read["packages"]] == ["Only one"]
+    assert read["hidden"] is True
+
+
+def test_package_order_is_preserved(client):
+    names = ["A", "B", "C"]
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(203),
+        json={"hidden": False, "packages": [_package(name=n) for n in names]},
+    )
+    read = client.get("/profiles/creators/me/rate-card", headers=_auth(203)).json()
+    assert [p["name"] for p in read["packages"]] == names
+
+
+def test_owner_endpoints_require_creator_role(client):
+    assert (
+        client.get(
+            "/profiles/creators/me/rate-card", headers=_auth(204, "brand")
+        ).status_code
+        == 403
+    )
+    assert (
+        client.put(
+            "/profiles/creators/me/rate-card",
+            headers=_auth(204, "brand"),
+            json={"hidden": False, "packages": []},
+        ).status_code
+        == 403
+    )
+
+
+def test_invalid_package_is_rejected_by_the_endpoint(client):
+    r = client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(205),
+        json={"hidden": False, "packages": [_package(price=0)]},
+    )
+    assert r.status_code == 422

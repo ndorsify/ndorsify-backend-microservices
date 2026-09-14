@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
 from .db.session import init_db
-from .routers import profiles, social
+from .routers import profiles, rate_cards, social
 
 
 @asynccontextmanager
@@ -34,6 +34,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(profiles.router)
+    app.include_router(rate_cards.router)
     app.include_router(social.router)
 
     @app.get("/health", tags=["meta"])

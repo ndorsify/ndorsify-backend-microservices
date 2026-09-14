@@ -126,3 +126,43 @@ def test_invalid_package_is_rejected_by_the_endpoint(client):
         json={"hidden": False, "packages": [_package(price=0)]},
     )
     assert r.status_code == 422
+
+
+# --- public read -------------------------------------------------------------
+def test_public_read_shows_visible_packages_only(client):
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(210),
+        json={
+            "hidden": False,
+            "packages": [_package(), _package(name="Hidden one", visible=False)],
+        },
+    )
+    body = client.get("/profiles/creators/210/rate-card").json()
+    assert [p["name"] for p in body["packages"]] == ["Single Reel"]
+
+
+def test_public_read_never_leaks_visibility_fields(client):
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(211),
+        json={"hidden": False, "packages": [_package()]},
+    )
+    body = client.get("/profiles/creators/211/rate-card").json()
+    assert "hidden" not in body
+    assert "visible" not in body["packages"][0]
+
+
+def test_public_read_of_a_hidden_card_is_empty(client):
+    client.put(
+        "/profiles/creators/me/rate-card",
+        headers=_auth(212),
+        json={"hidden": True, "packages": [_package()]},
+    )
+    assert client.get("/profiles/creators/212/rate-card").json() == {"packages": []}
+
+
+def test_public_read_of_a_missing_card_is_empty_not_404(client):
+    r = client.get("/profiles/creators/9999/rate-card")
+    assert r.status_code == 200
+    assert r.json() == {"packages": []}

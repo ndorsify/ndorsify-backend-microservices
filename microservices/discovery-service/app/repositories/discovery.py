@@ -62,6 +62,10 @@ async def search_creators(
         stmt = stmt.where(CreatorIndex.follower_count <= max_followers)
     if min_engagement is not None:
         stmt = stmt.where(CreatorIndex.engagement_rate >= min_engagement)
+    # A price filter only matches creators who have published a price. Without
+    # this, unpriced creators (rate_per_post 0) satisfy any "<= max" bound.
+    if min_rate is not None or max_rate is not None:
+        stmt = stmt.where(CreatorIndex.rate_per_post > 0)
     if min_rate is not None:
         stmt = stmt.where(CreatorIndex.rate_per_post >= min_rate)
     if max_rate is not None:

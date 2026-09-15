@@ -34,6 +34,7 @@ async def upsert_creator_index(
     location: Optional[str],
     follower_count: int = 0,
     engagement_rate: float = 0.0,
+    rate_per_post: int = 0,
     verified: bool = False,
 ) -> None:
     if not settings.discovery_url:
@@ -48,6 +49,7 @@ async def upsert_creator_index(
         "location": location,
         "follower_count": follower_count,
         "engagement_rate": engagement_rate,
+        "rate_per_post": rate_per_post,
         "verified": verified,
     }
     try:

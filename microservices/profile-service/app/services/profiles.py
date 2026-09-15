@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..clients import discovery as discovery_client
 from ..models.profiles import BrandProfile, CreatorProfile
 from ..repositories import profiles as repo
+from ..repositories import rate_cards as rate_card_repo
 from ..schemas.profiles import (
     BrandProfileResponse,
     BrandProfileUpdate,
@@ -27,6 +28,7 @@ async def aggregate_and_push(session: AsyncSession, user_id: int) -> None:
     simple average; verified is true once at least one platform is connected;
     handle is the first connected account's (arbitrary but stable — accounts
     are returned in insertion order).
+    rate_per_post is the lowest visible rate-card package price.
     """
     profile = await repo.get_creator(session, user_id)
     accounts = await repo.list_social_accounts(session, user_id)
@@ -40,6 +42,10 @@ async def aggregate_and_push(session: AsyncSession, user_id: int) -> None:
     handle = accounts[0].handle if accounts else None
     platforms = [a.platform for a in accounts]
 
+    # The lowest price a brand could actually buy — 0 when the card is hidden,
+    # empty, or absent. Computed here so no write path can reset it.
+    rate_per_post = await rate_card_repo.min_visible_price(session, user_id)
+
     await discovery_client.upsert_creator_index(
         user_id=user_id,
         display_name=profile.display_name if profile else None,
@@ -50,6 +56,7 @@ async def aggregate_and_push(session: AsyncSession, user_id: int) -> None:
         location=profile.location if profile else None,
         follower_count=follower_count,
         engagement_rate=engagement_rate,
+        rate_per_post=rate_per_post,
         verified=bool(accounts),
     )
 

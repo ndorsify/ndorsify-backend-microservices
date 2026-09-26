@@ -105,6 +105,18 @@ injected per deployment. Never hardcode a deployment hostname into either.
 Everything ships together — one preview URL, one rollback for all seven. See
 [ADR 0005](docs/adr/0005-deploy-as-vercel-services.md).
 
+**One Postgres, seven schemas.** Vercel injects a single project-wide
+`DATABASE_URL`, so the services share a database and separate by schema
+(`users`, `campaign`, `collaboration`, `profile`, `discovery`, `messaging`,
+`dynamic_content`). Each connection sets its own `search_path`, and each
+schema holds its own `alembic_version`. `db/session.py` also rewrites the
+provider's `postgres://…?sslmode=require` into what SQLAlchemy and asyncpg
+expect. Locally, point `DATABASE_URL` at any Postgres and the same layout is
+created for you.
+
+Each service's `buildCommand` runs `alembic upgrade head`, so a deploy
+migrates its own schema.
+
 Environment that must be set on the project before it works: `JWT_SECRET`
 (one value, all seven), `DATABASE_URL` per service, `BLOB_READ_WRITE_TOKEN`,
 `SEED_ON_START=false` and `EXPOSE_DEV_TOKENS=false`.

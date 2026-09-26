@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     port: int = 9000
     database_url: str = "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/discoverydb"
+    # This service's schema in the shared Postgres (see db/session.py).
+    db_schema: str = "discovery"
     # Drop connection pooling (serverless instances don't reuse one).
     db_null_pool: bool = False
 

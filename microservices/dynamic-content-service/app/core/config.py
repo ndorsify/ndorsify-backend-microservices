@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/dynamiccontentdb"
     )
+    # This service's schema in the shared Postgres (see db/session.py).
+    db_schema: str = "dynamic_content"
     # Drop connection pooling (serverless instances don't reuse one).
     db_null_pool: bool = False
 

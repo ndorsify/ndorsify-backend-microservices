@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     port: int = 1000
     # SQLAlchemy async URL. Postgres in prod; SQLite (aiosqlite) in tests.
     database_url: str = "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/usersdb"
+    # This service's schema in the shared Postgres (see db/session.py).
+    db_schema: str = "users"
     # Drop connection pooling (serverless instances don't reuse one).
     db_null_pool: bool = False
 

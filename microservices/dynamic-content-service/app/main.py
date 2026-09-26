@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
 from .db.session import init_db
-from .routers import onboarding
+from .routers import media, onboarding
 
 
 @asynccontextmanager
@@ -30,6 +30,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(onboarding.router)
+    app.include_router(media.router)
 
     @app.get("/health", tags=["meta"])
     async def health() -> dict:

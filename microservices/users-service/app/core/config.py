@@ -25,6 +25,19 @@ class Settings(BaseSettings):
     # Drop connection pooling (serverless instances don't reuse one).
     db_null_pool: bool = False
 
+    # --- Google sign-in ---
+    # Unset and OAUTH_ALLOW_STUB=true (dev, tests, previews) puts a
+    # deterministic stub in Google's place; unset and not allowed, the routes
+    # answer 501 rather than pretending.
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    oauth_allow_stub: bool = False
+    # Where this service is reachable publicly: the provider redirect has to
+    # match the registered URI exactly, so it can't be built from the request.
+    api_base_url: str = "http://localhost:1000"
+    # Where the browser is sent once the provider round trip is done.
+    app_url: str = "http://localhost:5055"
+
     # --- Auth (P0) -----------------------------------------------------------
     # JWT_SECRET MUST be overridden per environment. RS256 is an option later
     # (lets other services verify with only the public key); HS256 for now.

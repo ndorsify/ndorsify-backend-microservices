@@ -9,9 +9,13 @@ pydantic-settings>=2.1
 email-validator>=2.1
 passlib[bcrypt]>=1.7.4
 bcrypt>=4.0,<4.1
-pyjwt>=2.8
+# [crypto] brings `cryptography`, needed to verify Google's RS256 id_token.
+pyjwt[crypto]>=2.8
+# Runtime: the token exchange with Google.
+httpx>=0.27
 
 # dev / test
 pytest>=8.0
+# The Google provider's token verification is async.
+pytest-asyncio>=0.23
 aiosqlite>=0.19
-httpx>=0.27

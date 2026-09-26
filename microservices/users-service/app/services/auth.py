@@ -146,7 +146,10 @@ async def request_password_reset(
     email provider / dev echo), or ``None`` — the caller always responds 204 so
     accounts are not enumerable."""
     user = await repo.get_user_by_email(session, email)
-    if user is None:
+    if user is None or not user.password_hash:
+        # No account, or one that signs in through a provider: issuing a reset
+        # for the latter would quietly attach a password to a Google account.
+        # Same silent return either way — the route always answers the same.
         return None
     raw = security.generate_opaque_token()
     session.add(

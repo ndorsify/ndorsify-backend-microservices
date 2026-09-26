@@ -54,9 +54,17 @@ SCOPES = {
     "avatars": False,      # avatars/{user_id}/...
 }
 
+# The scopes whose id segment is the owner's user id, which makes ownership
+# checkable here with no lookup at all.
+OWNER_SCOPES = {scope for scope, caller_supplies_id in SCOPES.items() if not caller_supplies_id}
+
 
 class MediaError(Exception):
     """Invalid sign/upload request — routers turn this into a 400."""
+
+
+class Forbidden(Exception):
+    """The caller may not have this key — routers turn this into a 403."""
 
 
 @dataclass
@@ -178,9 +186,29 @@ def sign_upload(
     return {"key": key, "token": token, "content_type": content_type}
 
 
-async def sign_download(key: str) -> str:
+def may_read(key: str, user_id: int) -> bool:
+    """Whether this user may be handed a download URL for this key.
+
+    `media-kit/{user_id}/…` and `avatars/{user_id}/…` are namespaced by their
+    owner, so the key states who owns it — no lookup needed.
+
+    `submissions/{collaboration_id}/…` is not: deciding it means asking
+    collaboration-service who is on that collaboration. Until that call exists,
+    a submission key is a capability — holding the full key (scope, id and a
+    uuid4) is what grants the read, and keys only reach the two parties.
+    Narrower than it was, still not ownership.
+    """
+    scope, _, rest = key.partition("/")
+    if scope not in OWNER_SCOPES:
+        return True
+    return rest.split("/", 1)[0] == str(user_id)
+
+
+async def sign_download(key: str, user_id: int) -> str:
     if not await exists(key):
         raise MediaError("No such key")
+    if not may_read(key, user_id):
+        raise Forbidden("This file belongs to someone else")
     return _sign({"typ": "download", "k": key})
 
 

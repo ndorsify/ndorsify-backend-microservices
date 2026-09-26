@@ -7,6 +7,9 @@ alembic>=1.13
 pydantic>=2.6,<3.0
 pydantic-settings>=2.1
 pyjwt>=2.8
+# Media storage in production; needs Python 3.10+ (Docker runs 3.12).
+# Imported lazily, so a 3.9 dev venv without it still runs and tests.
+vercel_blob>=0.4.2
 
 # dev / test
 pytest>=8.0

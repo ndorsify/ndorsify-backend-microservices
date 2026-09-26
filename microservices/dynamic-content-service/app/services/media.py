@@ -5,21 +5,28 @@ signed URL, PUTs the bytes to it, and hands the returned ``key`` to whichever
 service stores the reference (collaboration submissions' ``file_refs``, the
 media kit, an avatar).
 
-ponytail: the bytes land on the local filesystem under ``MEDIA_ROOT`` instead
-of S3, so local dev needs no MinIO/cloud account. Everything client-facing —
-sign-upload → PUT → key → sign-download — is the shape S3 presigning gives,
-so swapping the store means rewriting only ``save``/``open_key``/``exists``
-here. Upgrade when there is more than one API instance, since two instances do
-not share a disk.
+Two stores sit behind the same contract, chosen by whether
+``BLOB_READ_WRITE_TOKEN`` is set:
+
+* **Vercel Blob** in production. A serverless instance has no durable
+  filesystem — a file written on one request is gone on the next — so the
+  bytes have to leave the function.
+* **The local filesystem** otherwise, so dev and tests need no cloud account.
+
+Only ``save``/``open_key``/``exists`` know the difference; everything
+client-facing — sign-upload → PUT → key → sign-download — is identical either
+way, which is what makes a third store (S3, R2) a change to three functions.
 """
 import mimetypes
 import os
 import time
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 import jwt
+from fastapi.concurrency import run_in_threadpool
 
 from ..core.config import settings
 
@@ -44,6 +51,59 @@ SCOPES = {
 
 class MediaError(Exception):
     """Invalid sign/upload request — routers turn this into a 400."""
+
+
+@dataclass
+class StoredObject:
+    """Where a caller holding a valid download token should be sent.
+
+    Blob hands back a URL to redirect to; the local store hands back a path to
+    serve. Exactly one of the two is set.
+    """
+
+    content_type: str
+    url: Optional[str] = None
+    path: Optional[Path] = None
+
+
+def _blob_enabled() -> bool:
+    return bool(settings.blob_read_write_token)
+
+
+# The SDK is synchronous (requests), so every call goes through a threadpool
+# rather than blocking the event loop. Wrapped in module-level functions so
+# tests can swap the store without reaching for the network.
+#
+# It is imported inside the call, not at module load: vercel_blob needs Python
+# 3.10+, the local dev venv is still 3.9, and nothing needs the SDK unless a
+# Blob token is configured. Docker and Vercel both run 3.12.
+def _blob_put(key: str, body: bytes) -> str:
+    import vercel_blob
+
+    result = vercel_blob.put(
+        key,
+        body,
+        {
+            # The key already carries a uuid4, so the path is the identity —
+            # no suffix. allowOverwrite makes a retried PUT of the same signed
+            # token idempotent instead of an error.
+            "addRandomSuffix": "false",
+            "allowOverwrite": "true",
+            "token": settings.blob_read_write_token,
+        },
+    )
+    return result["url"]
+
+
+def _blob_url(key: str) -> Optional[str]:
+    """The public URL for a key, or None if nothing is stored under it."""
+    import vercel_blob
+
+    listing = vercel_blob.list(
+        {"prefix": key, "limit": "1", "token": settings.blob_read_write_token}
+    )
+    blobs = listing.get("blobs") or []
+    return blobs[0]["url"] if blobs else None
 
 
 def _root() -> Path:
@@ -103,13 +163,13 @@ def sign_upload(
     return {"key": key, "token": token, "content_type": content_type}
 
 
-def sign_download(key: str) -> str:
-    if not exists(key):
+async def sign_download(key: str) -> str:
+    if not await exists(key):
         raise MediaError("No such key")
     return _sign({"typ": "download", "k": key})
 
 
-def save(token: str, body: bytes, content_type: str) -> str:
+async def save(token: str, body: bytes, content_type: str) -> str:
     """Store the PUT body against a signed upload token; returns the key."""
     payload = _verify(token, "upload")
     if content_type.split(";")[0].strip() != payload["ct"]:
@@ -118,26 +178,42 @@ def save(token: str, body: bytes, content_type: str) -> str:
         raise MediaError("Body is larger than the signed upload declared")
     if not body:
         raise MediaError("Empty body")
-    path = _resolve(payload["k"])
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(body)
-    return payload["k"]
+    key = payload["k"]
+    if _blob_enabled():
+        await run_in_threadpool(_blob_put, key, body)
+    else:
+        path = _resolve(key)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(body)
+    return key
 
 
-def open_key(token: str) -> tuple[Path, str]:
-    """Resolve a signed download token to (path, content_type)."""
+async def open_key(token: str) -> StoredObject:
+    """Resolve a signed download token to the object it stands for."""
     payload = _verify(token, "download")
-    path = _resolve(payload["k"])
+    key = payload["k"]
+    content_type = mimetypes.guess_type(key)[0] or "application/octet-stream"
+
+    if _blob_enabled():
+        url = await run_in_threadpool(_blob_url, key)
+        if not url:
+            raise MediaError("No such key")
+        return StoredObject(content_type=content_type, url=url)
+
+    path = _resolve(key)
     if not path.is_file():
         raise MediaError("No such key")
-    return path, mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    return StoredObject(content_type=content_type, path=path)
 
 
-def exists(key: str) -> bool:
+async def exists(key: str) -> bool:
     try:
-        return _resolve(key).is_file()
+        path = _resolve(key)  # lexical guard — runs whichever store is behind us
     except MediaError:
         return False
+    if _blob_enabled():
+        return (await run_in_threadpool(_blob_url, key)) is not None
+    return path.is_file()
 
 
 def _resolve(key: str) -> Path:

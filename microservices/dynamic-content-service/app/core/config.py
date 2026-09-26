@@ -19,10 +19,12 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
 
     # --- Media storage (E7 §1) ---
-    # Where uploaded bytes land. ponytail: local filesystem, swap for S3 by
-    # rewriting app/services/media.py's save/open/exists — the signed-URL
-    # contract the clients see does not change.
+    # Where uploaded bytes land when BLOB_READ_WRITE_TOKEN is unset: the local
+    # filesystem, which keeps dev and tests free of any cloud account.
     media_root: str = "media-store"
+    # Set in production (Vercel injects it): uploads go to Vercel Blob instead
+    # of the local filesystem, which a serverless instance does not keep.
+    blob_read_write_token: str = ""
     media_max_bytes: int = 25 * 1024 * 1024
     # Signed upload/download URLs are short-lived.
     media_url_ttl_seconds: int = 900

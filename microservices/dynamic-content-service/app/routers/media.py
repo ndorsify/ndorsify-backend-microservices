@@ -8,7 +8,7 @@ is what requires a logged-in user.
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 from ..core.deps import Principal, require_auth
@@ -65,7 +65,7 @@ async def sign_upload(
 async def upload(token: str, request: Request) -> None:
     body = await request.body()
     try:
-        service.save(token, body, request.headers.get("content-type", ""))
+        await service.save(token, body, request.headers.get("content-type", ""))
     except service.MediaError as exc:
         raise HTTPException(400, str(exc))
 
@@ -81,7 +81,7 @@ async def sign_download(
     principal: Principal = Depends(require_auth),
 ) -> SignDownloadResponse:
     try:
-        token = service.sign_download(key)
+        token = await service.sign_download(key)
     except service.MediaError as exc:
         raise HTTPException(404, str(exc))
     return SignDownloadResponse(
@@ -91,9 +91,12 @@ async def sign_download(
 
 
 @router.get("/file/{token}")
-async def file(token: str) -> FileResponse:
+async def file(token: str):
     try:
-        path, content_type = service.open_key(token)
+        stored = await service.open_key(token)
     except service.MediaError as exc:
         raise HTTPException(404, str(exc))
-    return FileResponse(path, media_type=content_type)
+    if stored.url:
+        # Blob serves the bytes itself; the token check above is the gate.
+        return RedirectResponse(stored.url, status_code=307)
+    return FileResponse(stored.path, media_type=stored.content_type)

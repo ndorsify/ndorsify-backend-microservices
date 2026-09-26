@@ -1,6 +1,6 @@
 """Async engine, session factory, and FastAPI DB dependency."""
-import re
 from typing import AsyncGenerator
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import (
@@ -13,18 +13,37 @@ from ..core.config import settings
 from .base import Base
 
 
+# Query parameters libpq understands and asyncpg does not. Neon's URL carries
+# both; passing either through raises TypeError at connect time.
+_LIBPQ_ONLY = {"sslmode", "channel_binding", "connect_timeout", "target_session_attrs"}
+
+
 def _normalise(url: str) -> str:
     """Make a provider-issued Postgres URL usable by SQLAlchemy + asyncpg.
 
-    Vercel and Neon hand out `postgres://…?sslmode=require`, which is libpq's
-    spelling: SQLAlchemy needs the driver named, and asyncpg rejects `sslmode`
-    as an unknown option. TLS is requested through connect_args instead.
+    Vercel and Neon hand out
+    `postgres://…?sslmode=require&channel_binding=require` — libpq's spelling.
+    SQLAlchemy needs the driver named, and asyncpg rejects libpq-only options
+    as unexpected keyword arguments. TLS is requested through connect_args
+    instead.
     """
-    for prefix in ("postgresql+asyncpg://", "postgresql://", "postgres://"):
+    prefixes = ("postgresql+asyncpg://", "postgresql://", "postgres://")
+    if not url.startswith(prefixes):
+        # SQLite and anything else: untouched. Round-tripping a URL whose
+        # netloc is empty (sqlite+aiosqlite:///file) drops a slash.
+        return url
+    for prefix in prefixes:
         if url.startswith(prefix):
             url = "postgresql+asyncpg://" + url[len(prefix):]
             break
-    return re.sub(r"[?&]sslmode=[^&]*", "", url)
+
+    parts = urlsplit(url)
+    kept = [
+        (k, v)
+        for k, v in parse_qsl(parts.query, keep_blank_values=True)
+        if k not in _LIBPQ_ONLY
+    ]
+    return urlunsplit(parts._replace(query=urlencode(kept)))
 
 
 DATABASE_URL = _normalise(settings.database_url)

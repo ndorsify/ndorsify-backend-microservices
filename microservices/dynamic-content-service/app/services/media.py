@@ -19,6 +19,7 @@ way, which is what makes a third store (S3, R2) a change to three functions.
 """
 import mimetypes
 import os
+import re
 import time
 import uuid
 from dataclasses import dataclass
@@ -40,6 +41,11 @@ ALLOWED_CONTENT_TYPES = {
     "video/quicktime",
     "application/pdf",
 }
+
+# Every key this service mints looks like this. Anything else is refused
+# before it reaches a store: a caller who supplies a *prefix* ("submissions/42/")
+# must not be able to fish out whichever object happens to sit under it.
+KEY_RE = re.compile(r"^(submissions|media-kit|avatars)/[A-Za-z0-9_-]+/[0-9a-f]{32}(\.[A-Za-z0-9]+)?$")
 
 # scope -> whether the caller supplies the id segment (else it's their user id).
 SCOPES = {
@@ -95,15 +101,24 @@ def _blob_put(key: str, body: bytes) -> str:
     return result["url"]
 
 
-def _blob_url(key: str) -> Optional[str]:
-    """The public URL for a key, or None if nothing is stored under it."""
+def _blob_list(prefix: str) -> list:
     import vercel_blob
 
     listing = vercel_blob.list(
-        {"prefix": key, "limit": "1", "token": settings.blob_read_write_token}
+        {"prefix": prefix, "limit": "20", "token": settings.blob_read_write_token}
     )
-    blobs = listing.get("blobs") or []
-    return blobs[0]["url"] if blobs else None
+    return listing.get("blobs") or []
+
+
+def _blob_url(key: str) -> Optional[str]:
+    """The public URL for a key, or None if nothing is stored under *that* key.
+
+    The store only offers prefix search, so the exact-pathname check here is
+    what keeps a partial key from resolving to somebody else's object.
+    """
+    return next(
+        (b["url"] for b in _blob_list(key) if b.get("pathname") == key), None
+    )
 
 
 def _root() -> Path:
@@ -207,6 +222,8 @@ async def open_key(token: str) -> StoredObject:
 
 
 async def exists(key: str) -> bool:
+    if not KEY_RE.match(key):
+        return False
     try:
         path = _resolve(key)  # lexical guard — runs whichever store is behind us
     except MediaError:

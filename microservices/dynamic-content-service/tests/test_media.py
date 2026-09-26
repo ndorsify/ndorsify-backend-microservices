@@ -131,8 +131,13 @@ class FakeBlob:
         self.objects[key] = body
         return f"{self.BASE}/{key}"
 
-    def url(self, key):
-        return f"{self.BASE}/{key}" if key in self.objects else None
+    def list(self, prefix):
+        """Prefix search, like the real store — exactness is our job."""
+        return [
+            {"pathname": k, "url": f"{self.BASE}/{k}"}
+            for k in self.objects
+            if k.startswith(prefix)
+        ]
 
 
 @pytest.fixture()
@@ -143,7 +148,7 @@ def blob(monkeypatch):
     fake = FakeBlob()
     monkeypatch.setattr(settings, "blob_read_write_token", "vercel_blob_rw_test")
     monkeypatch.setattr(media, "_blob_put", lambda key, body: fake.put(key, body))
-    monkeypatch.setattr(media, "_blob_url", fake.url)
+    monkeypatch.setattr(media, "_blob_list", fake.list)
     return fake
 
 
@@ -185,3 +190,34 @@ def test_blob_still_refuses_traversal(client, blob):
         "/media/sign-download", params={"key": "../../etc/passwd"}, headers=_auth(12)
     )
     assert r.status_code == 404
+
+
+def test_blob_refuses_a_prefix_of_a_real_key(client, blob):
+    """A collaboration id is a small integer, so `submissions/42/` is guessable
+    where the uuid4 in the full key is not. Prefix search must not resolve it."""
+    signed = _sign(client, user_id=12, scope="submissions", ref_id="42")
+    key = signed.json()["key"]
+    client.put(
+        signed.json()["upload_url"], content=PNG, headers={"Content-Type": "image/png"}
+    )
+    assert blob.objects[key] == PNG  # the real object is there
+
+    for probe in ("submissions/42/", "submissions/42", key[:-6]):
+        r = client.get(
+            "/media/sign-download", params={"key": probe}, headers=_auth(12)
+        )
+        assert r.status_code == 404, f"{probe} resolved to a real object"
+
+
+def test_local_store_refuses_a_prefix_of_a_real_key(client):
+    signed = _sign(client, user_id=13, scope="submissions", ref_id="43")
+    key = signed.json()["key"]
+    client.put(
+        signed.json()["upload_url"], content=PNG, headers={"Content-Type": "image/png"}
+    )
+
+    for probe in ("submissions/43/", "submissions/43", key[:-6]):
+        r = client.get(
+            "/media/sign-download", params={"key": probe}, headers=_auth(13)
+        )
+        assert r.status_code == 404, f"{probe} resolved to a real object"

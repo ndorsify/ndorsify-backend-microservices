@@ -1,0 +1,65 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "users": {
+      "root": "microservices/users-service",
+      "entrypoint": "app.main:app",
+      "rewrites": [{ "source": "/api/users/:path(.*)?", "destination": "/:path" }]
+    },
+    "campaigns": {
+      "root": "microservices/campaign-service",
+      "entrypoint": "app.main:app",
+      "rewrites": [{ "source": "/api/campaigns/:path(.*)?", "destination": "/:path" }],
+      "bindings": [
+        {
+          "type": "service",
+          "service": "collab",
+          "format": "url",
+          "env": "COLLABORATION_URL"
+        }
+      ]
+    },
+    "collab": {
+      "root": "microservices/collaboration-service",
+      "entrypoint": "app.main:app",
+      "rewrites": [{ "source": "/api/collab/:path(.*)?", "destination": "/:path" }]
+    },
+    "profiles": {
+      "root": "microservices/profile-service",
+      "entrypoint": "app.main:app",
+      "rewrites": [{ "source": "/api/profiles/:path(.*)?", "destination": "/:path" }],
+      "bindings": [
+        {
+          "type": "service",
+          "service": "discovery",
+          "format": "url",
+          "env": "DISCOVERY_URL"
+        }
+      ]
+    },
+    "discovery": {
+      "root": "microservices/discovery-service",
+      "entrypoint": "app.main:app",
+      "rewrites": [{ "source": "/api/discovery/:path(.*)?", "destination": "/:path" }]
+    },
+    "messaging": {
+      "root": "microservices/messaging-service",
+      "entrypoint": "app.main:app",
+      "rewrites": [{ "source": "/api/messaging/:path(.*)?", "destination": "/:path" }]
+    },
+    "content": {
+      "root": "microservices/dynamic-content-service",
+      "entrypoint": "app.main:app",
+      "rewrites": [{ "source": "/api/content/:path(.*)?", "destination": "/:path" }]
+    }
+  },
+  "rewrites": [
+    { "source": "/api/users/(.*)", "destination": { "service": "users" } },
+    { "source": "/api/campaigns/(.*)", "destination": { "service": "campaigns" } },
+    { "source": "/api/collab/(.*)", "destination": { "service": "collab" } },
+    { "source": "/api/profiles/(.*)", "destination": { "service": "profiles" } },
+    { "source": "/api/discovery/(.*)", "destination": { "service": "discovery" } },
+    { "source": "/api/messaging/(.*)", "destination": { "service": "messaging" } },
+    { "source": "/api/content/(.*)", "destination": { "service": "content" } }
+  ]
+}

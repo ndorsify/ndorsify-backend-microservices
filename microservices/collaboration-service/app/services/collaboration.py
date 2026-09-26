@@ -219,7 +219,11 @@ async def timeline(
                 kind="submission",
                 deliverable_id=s.deliverable_id,
                 at=s.created_at,
-                detail={"version": s.version, "note": s.note},
+                detail={
+                    "version": s.version,
+                    "note": s.note,
+                    "file_refs": s.file_refs,
+                },
             )
         )
     for r in reviews:

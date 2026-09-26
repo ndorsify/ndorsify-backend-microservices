@@ -74,14 +74,12 @@ async def upload(token: str, request: Request) -> None:
 async def sign_download(
     request: Request,
     key: str = Query(...),
-    # ponytail: any authenticated user who holds a key can read it — keys are
-    # unguessable (uuid4) and only handed to the parties in a collaboration.
-    # Per-key ownership checks need cross-service lookups (who is on this
-    # collaboration?); add them when media stops being shared-by-link.
     principal: Principal = Depends(require_auth),
 ) -> SignDownloadResponse:
     try:
-        token = await service.sign_download(key)
+        token = await service.sign_download(key, principal.user_id)
+    except service.Forbidden as exc:
+        raise HTTPException(403, str(exc))
     except service.MediaError as exc:
         raise HTTPException(404, str(exc))
     return SignDownloadResponse(

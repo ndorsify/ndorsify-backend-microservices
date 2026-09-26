@@ -221,3 +221,48 @@ def test_local_store_refuses_a_prefix_of_a_real_key(client):
             "/media/sign-download", params={"key": probe}, headers=_auth(13)
         )
         assert r.status_code == 404, f"{probe} resolved to a real object"
+
+
+# --- who may mint a download URL -------------------------------------------
+def test_media_kit_key_is_readable_only_by_its_owner(client):
+    """media-kit/{user_id}/… states its owner, so no lookup is needed to
+    refuse someone else — even holding the whole key."""
+    signed = _sign(client, user_id=70, scope="media-kit")
+    key = signed.json()["key"]
+    client.put(
+        signed.json()["upload_url"], content=PNG, headers={"Content-Type": "image/png"}
+    )
+
+    assert (
+        client.get("/media/sign-download", params={"key": key}, headers=_auth(70))
+    ).status_code == 200
+    stranger = client.get(
+        "/media/sign-download", params={"key": key}, headers=_auth(71)
+    )
+    assert stranger.status_code == 403, stranger.text
+
+
+def test_avatar_key_is_readable_only_by_its_owner(client):
+    signed = _sign(client, user_id=72, scope="avatars")
+    key = signed.json()["key"]
+    client.put(
+        signed.json()["upload_url"], content=PNG, headers={"Content-Type": "image/png"}
+    )
+    assert (
+        client.get("/media/sign-download", params={"key": key}, headers=_auth(73))
+    ).status_code == 403
+
+
+def test_submission_key_is_still_a_capability(client):
+    """Documented gap: a submission belongs to a collaboration, and deciding
+    who is on it needs collaboration-service. Until then, holding the full key
+    is what grants the read."""
+    signed = _sign(client, user_id=74, scope="submissions", ref_id="900")
+    key = signed.json()["key"]
+    client.put(
+        signed.json()["upload_url"], content=PNG, headers={"Content-Type": "image/png"}
+    )
+    other_party = client.get(
+        "/media/sign-download", params={"key": key}, headers=_auth(75)
+    )
+    assert other_party.status_code == 200

@@ -59,15 +59,26 @@ async def init_db() -> None:
     """Ensure the schema exists, then seed reference content when empty.
 
     On Postgres the schema is owned by **Alembic** (`alembic upgrade head`, run
-    before the server starts). On SQLite (local poking and the test suite) the
-    tables are created directly. Seeding is idempotent and runs on both.
+    from CI). On SQLite (local poking and the test suite) the tables are
+    created directly and the reference rows are seeded.
+
+    Seeding does **not** run against Postgres unless SEED_ON_START says so.
+    This hook runs on every cold start, and a serverless instance that can't
+    reach the database during startup fails the whole invocation — which is
+    exactly what took this service down on its first deploy, while the other
+    six (which touch no database at boot) came up fine. Startup is the wrong
+    place to need a database.
     """
     from .. import models  # noqa: F401
     from .seed import seed_content
 
-    if settings.database_url.startswith("sqlite"):
+    is_sqlite = settings.database_url.startswith("sqlite")
+    if is_sqlite:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+
+    if not (is_sqlite or settings.seed_on_start):
+        return
 
     async with SessionLocal() as session:
         await seed_content(session)

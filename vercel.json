@@ -6,7 +6,11 @@
       "entrypoint": "app.main:app",
       "rewrites": [
         {
-          "source": "/api/users/:path(.*)?",
+          "source": "/api/_health/users",
+          "destination": "/health"
+        },
+        {
+          "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
       ],
@@ -17,7 +21,11 @@
       "entrypoint": "app.main:app",
       "rewrites": [
         {
-          "source": "/api/campaigns/:path(.*)?",
+          "source": "/api/_health/campaigns",
+          "destination": "/health"
+        },
+        {
+          "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
       ],
@@ -36,7 +44,11 @@
       "entrypoint": "app.main:app",
       "rewrites": [
         {
-          "source": "/api/collab/:path(.*)?",
+          "source": "/api/_health/collab",
+          "destination": "/health"
+        },
+        {
+          "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
       ],
@@ -47,7 +59,11 @@
       "entrypoint": "app.main:app",
       "rewrites": [
         {
-          "source": "/api/profiles/:path(.*)?",
+          "source": "/api/_health/profiles",
+          "destination": "/health"
+        },
+        {
+          "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
       ],
@@ -66,7 +82,11 @@
       "entrypoint": "app.main:app",
       "rewrites": [
         {
-          "source": "/api/discovery/:path(.*)?",
+          "source": "/api/_health/discovery",
+          "destination": "/health"
+        },
+        {
+          "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
       ],
@@ -77,7 +97,11 @@
       "entrypoint": "app.main:app",
       "rewrites": [
         {
-          "source": "/api/messaging/:path(.*)?",
+          "source": "/api/_health/messaging",
+          "destination": "/health"
+        },
+        {
+          "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
       ],
@@ -88,7 +112,11 @@
       "entrypoint": "app.main:app",
       "rewrites": [
         {
-          "source": "/api/content/:path(.*)?",
+          "source": "/api/_health/content",
+          "destination": "/health"
+        },
+        {
+          "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
       ],
@@ -97,7 +125,67 @@
   },
   "rewrites": [
     {
+      "source": "/api/_health/users",
+      "destination": {
+        "service": "users"
+      }
+    },
+    {
+      "source": "/api/_health/campaigns",
+      "destination": {
+        "service": "campaigns"
+      }
+    },
+    {
+      "source": "/api/_health/collab",
+      "destination": {
+        "service": "collab"
+      }
+    },
+    {
+      "source": "/api/_health/profiles",
+      "destination": {
+        "service": "profiles"
+      }
+    },
+    {
+      "source": "/api/_health/discovery",
+      "destination": {
+        "service": "discovery"
+      }
+    },
+    {
+      "source": "/api/_health/messaging",
+      "destination": {
+        "service": "messaging"
+      }
+    },
+    {
+      "source": "/api/_health/content",
+      "destination": {
+        "service": "content"
+      }
+    },
+    {
+      "source": "/api/auth/(.*)",
+      "destination": {
+        "service": "users"
+      }
+    },
+    {
+      "source": "/api/auth",
+      "destination": {
+        "service": "users"
+      }
+    },
+    {
       "source": "/api/users/(.*)",
+      "destination": {
+        "service": "users"
+      }
+    },
+    {
+      "source": "/api/users",
       "destination": {
         "service": "users"
       }
@@ -109,7 +197,55 @@
       }
     },
     {
-      "source": "/api/collab/(.*)",
+      "source": "/api/campaigns",
+      "destination": {
+        "service": "campaigns"
+      }
+    },
+    {
+      "source": "/api/applications/(.*)",
+      "destination": {
+        "service": "campaigns"
+      }
+    },
+    {
+      "source": "/api/applications",
+      "destination": {
+        "service": "campaigns"
+      }
+    },
+    {
+      "source": "/api/invitations/(.*)",
+      "destination": {
+        "service": "campaigns"
+      }
+    },
+    {
+      "source": "/api/invitations",
+      "destination": {
+        "service": "campaigns"
+      }
+    },
+    {
+      "source": "/api/collaborations/(.*)",
+      "destination": {
+        "service": "collab"
+      }
+    },
+    {
+      "source": "/api/collaborations",
+      "destination": {
+        "service": "collab"
+      }
+    },
+    {
+      "source": "/api/deliverables/(.*)",
+      "destination": {
+        "service": "collab"
+      }
+    },
+    {
+      "source": "/api/deliverables",
       "destination": {
         "service": "collab"
       }
@@ -121,19 +257,67 @@
       }
     },
     {
+      "source": "/api/profiles",
+      "destination": {
+        "service": "profiles"
+      }
+    },
+    {
+      "source": "/api/social/(.*)",
+      "destination": {
+        "service": "profiles"
+      }
+    },
+    {
+      "source": "/api/social",
+      "destination": {
+        "service": "profiles"
+      }
+    },
+    {
       "source": "/api/discovery/(.*)",
       "destination": {
         "service": "discovery"
       }
     },
     {
-      "source": "/api/messaging/(.*)",
+      "source": "/api/discovery",
+      "destination": {
+        "service": "discovery"
+      }
+    },
+    {
+      "source": "/api/conversations/(.*)",
       "destination": {
         "service": "messaging"
       }
     },
     {
-      "source": "/api/content/(.*)",
+      "source": "/api/conversations",
+      "destination": {
+        "service": "messaging"
+      }
+    },
+    {
+      "source": "/api/onboard/(.*)",
+      "destination": {
+        "service": "content"
+      }
+    },
+    {
+      "source": "/api/onboard",
+      "destination": {
+        "service": "content"
+      }
+    },
+    {
+      "source": "/api/media/(.*)",
+      "destination": {
+        "service": "content"
+      }
+    },
+    {
+      "source": "/api/media",
       "destination": {
         "service": "content"
       }

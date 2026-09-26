@@ -93,10 +93,23 @@ is separate from migrations.
 
 ## Deploying
 
-`vercel.json` defines the repo as one Vercel project with seven services, each
-routed by path (`/api/users/*` → users-service, and so on). A service-scoped
-rewrite strips the prefix, so service code never sees it and nothing changes
-between local and deployed.
+`vercel.json` defines the repo as one Vercel project with seven services. The
+**only** public prefix is `/api`, which a service-scoped rewrite strips — each
+service is then addressed by the path segments its own routers already serve:
+
+| Segment | Service |
+|---|---|
+| `/api/auth`, `/api/users` | users-service |
+| `/api/campaigns`, `/api/applications`, `/api/invitations` | campaign-service |
+| `/api/collaborations`, `/api/deliverables` | collaboration-service |
+| `/api/profiles`, `/api/social` | profile-service |
+| `/api/discovery` | discovery-service |
+| `/api/conversations` | messaging-service |
+| `/api/onboard`, `/api/media` | dynamic-content-service |
+
+So a route is reachable at exactly its local path with `/api` in front, and
+`/api/_health/<service>` probes one service. discovery's `/internal` routes
+have no public rewrite, so they stay reachable only through bindings.
 
 The two internal calls are **bindings**, not public HTTP: campaign-service
 receives `COLLABORATION_URL` and profile-service receives `DISCOVERY_URL`,
@@ -119,7 +132,9 @@ migrates its own schema.
 
 Environment that must be set on the project before it works: `JWT_SECRET`
 (one value, all seven), `DATABASE_URL` per service, `BLOB_READ_WRITE_TOKEN`,
-`SEED_ON_START=false` and `EXPOSE_DEV_TOKENS=false`.
+`SEED_ON_START=false` and `EXPOSE_DEV_TOKENS=false`. **Nothing that touches a
+database may run in a startup hook** — a cold start that can't reach the
+database fails the whole invocation.
 
 ## Ports
 

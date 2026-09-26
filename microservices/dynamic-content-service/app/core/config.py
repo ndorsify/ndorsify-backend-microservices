@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     db_schema: str = "dynamic_content"
     # Drop connection pooling (serverless instances don't reuse one).
     db_null_pool: bool = False
+    # Seed reference content at startup. On by default only for SQLite (dev and
+    # tests); set it explicitly to seed a Postgres deployment once.
+    seed_on_start: bool = False
 
     # --- Auth (P0) ---
     # Must match users-service so this service can verify access tokens it issues.

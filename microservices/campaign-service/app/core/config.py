@@ -6,6 +6,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_name: str = "campaign-service"
+    # Public path prefix this service is served under. Deployed, the edge
+    # strips /api before the request arrives, so the app never sees it — but
+    # any URL it *generates* has to carry it, or the caller gets a 404.
+    root_path: str = ""
     port: int = 2000
     database_url: str = "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/campaigndb"
     # This service's schema in the shared Postgres (see db/session.py).

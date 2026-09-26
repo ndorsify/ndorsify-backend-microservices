@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     app_name: str = "collaboration-service"
     port: int = 4000
     database_url: str = "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/collaborationdb"
+    # Drop connection pooling (serverless instances don't reuse one).
+    db_null_pool: bool = False
     # Comma-separated origins allowed to call this service from a browser (CORS).
     cors_origins: str = "http://localhost:3000"
 

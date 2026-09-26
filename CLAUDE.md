@@ -59,9 +59,34 @@ directly via `create_all`, so no migration step is needed there.
 ```bash
 cd microservices/<service>
 alembic upgrade head                          # apply migrations (uses DATABASE_URL)
+alembic check                                 # do the models match the migrations?
 alembic revision --autogenerate -m "message"  # author a new migration after model changes
 alembic downgrade -1                          # roll back one revision
 ```
+
+**Autogenerate compares the database against `Base.metadata`**, so every model
+has to be imported in that service's `alembic/env.py` — a model the file never
+imports looks like a table to *drop*, and autogenerate will happily write that
+migration. CI runs `alembic upgrade head`, `alembic check` and
+`alembic downgrade base` per service against a real Postgres, which is what
+catches it; the pytest suites run on SQLite and never execute a migration.
+
+### Running a service against Postgres locally
+
+```bash
+# one throwaway instance for all seven databases
+initdb -D /tmp/ndorsify-pg -U ndorsify --auth=trust
+pg_ctl -D /tmp/ndorsify-pg -o "-p 55432" start
+psql -h localhost -p 55432 -U ndorsify -d postgres -f db/init/01-create-databases.sql
+
+cd microservices/users-service
+DATABASE_URL="postgresql+asyncpg://ndorsify@localhost:55432/usersdb" alembic upgrade head
+DATABASE_URL="postgresql+asyncpg://ndorsify@localhost:55432/usersdb" python -m app.server
+```
+
+Engines set `pool_pre_ping` (a pooler or idle timeout can close a connection
+underneath us), and `DB_NULL_POOL=true` turns pooling off entirely — the right
+setting for short-lived serverless instances that never reuse a pool.
 
 `dynamic-content-service` seeds reference rows on startup (idempotent); seeding
 is separate from migrations.

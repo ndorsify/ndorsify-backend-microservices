@@ -1,9 +1,8 @@
 """Alembic environment (async), wired to the app's settings and metadata.
 
-profile-service has no models yet, so there are no migrations under versions/;
-``alembic upgrade head`` simply creates the alembic_version bookkeeping table.
-Add models under app/models/, import them here, then ``alembic revision
---autogenerate`` to author the first migration.
+Models must be imported here, not just defined: autogenerate compares the
+database against ``Base.metadata``, so a model this file never imports looks
+like a table to DROP. ``alembic check`` in CI is what keeps that honest.
 """
 import asyncio
 
@@ -14,6 +13,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import settings
 from app.db.base import Base
+from app import models  # noqa: F401  (register models on Base.metadata)
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

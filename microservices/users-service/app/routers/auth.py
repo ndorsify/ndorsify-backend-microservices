@@ -4,7 +4,7 @@ Email/password + JWT, and Google sign-in. Without Google credentials the
 provider routes answer 501, or use a deterministic stub when
 OAUTH_ALLOW_STUB is set (dev, tests, previews).
 """
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +19,6 @@ from ..schemas.auth import (
     RefreshRequest,
     OAuthCompleteRequest,
     OAuthExchangeRequest,
-    OAuthStartResponse,
     RegisterRequest,
     RegisterResponse,
     ResetPasswordRequest,
@@ -115,13 +114,33 @@ async def service_get_me(session: AsyncSession, principal: Principal):
 
 
 # --- Social sign-in ---------------------------------------------------------
-@router.get("/oauth/{provider}/start", response_model=OAuthStartResponse)
-async def oauth_start(provider: str) -> OAuthStartResponse:
-    return OAuthStartResponse(authorize_url=oauth_service.start(provider))
+@router.get("/oauth/{provider}/start")
+async def oauth_start(provider: str) -> RedirectResponse:
+    """Send the browser to the provider, remembering that it was this browser.
+
+    A redirect rather than JSON: the nonce cookie has to be set during a
+    top-level navigation, or SameSite=Lax won't return it when the provider
+    navigates back. The frontend links here instead of fetching it.
+    """
+    authorize_url, nonce = oauth_service.start(provider)
+    response = RedirectResponse(
+        authorize_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT
+    )
+    response.set_cookie(
+        oauth_service.STATE_COOKIE,
+        nonce,
+        max_age=600,
+        httponly=True,
+        secure=settings.api_base_url.startswith("https"),
+        samesite="lax",
+        path="/",
+    )
+    return response
 
 
 @router.get("/oauth/{provider}/callback")
 async def oauth_callback(
+    request: Request,
     provider: str,
     code: str = Query(...),
     state: str = Query(...),
@@ -133,11 +152,14 @@ async def oauth_callback(
     ends up in history, logs and referrer headers. The browser carries a
     one-time reference instead and posts it back.
     """
-    kind, token = await oauth_service.callback(session, provider, code, state)
-    return RedirectResponse(
+    nonce = request.cookies.get(oauth_service.STATE_COOKIE)
+    kind, token = await oauth_service.callback(session, provider, code, state, nonce)
+    response = RedirectResponse(
         f"{settings.app_url.rstrip('/')}/oauth/callback?{kind}={token}",
         status_code=status.HTTP_307_TEMPORARY_REDIRECT,
     )
+    response.delete_cookie(oauth_service.STATE_COOKIE, path="/")
+    return response
 
 
 @router.post("/oauth/exchange", response_model=TokenPair)

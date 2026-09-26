@@ -65,10 +65,6 @@ class MessageResponse(BaseModel):
 
 
 # --- Social sign-in ---
-class OAuthStartResponse(BaseModel):
-    authorize_url: str
-
-
 class OAuthExchangeRequest(BaseModel):
     handoff: str
 

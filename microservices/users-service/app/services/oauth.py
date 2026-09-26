@@ -13,8 +13,10 @@ Neither the token pair nor the signup token travel in the redirect URL — the
 browser gets a one-time handoff instead, which is exchanged over POST. A URL
 lands in history, logs and referrers; a refresh token should not.
 """
+import hashlib
+import hmac
+import secrets
 import time
-from datetime import timedelta
 from typing import Optional, Tuple
 
 import jwt
@@ -65,13 +67,32 @@ def redirect_uri(provider: str) -> str:
     return f"{settings.api_base_url.rstrip('/')}/auth/oauth/{provider}/callback"
 
 
-def start(provider: str) -> str:
+STATE_COOKIE = "ndorsify_oauth_nonce"
+
+
+def start(provider: str) -> Tuple[str, str]:
+    """Returns (authorize_url, nonce).
+
+    The nonce goes to the browser as a cookie and its hash into the signed
+    state. A signature alone only proves *we* minted the state, not that this
+    browser asked for it — without the pairing, anyone can fetch a state, hand
+    a victim a crafted callback URL, and have the victim's browser silently
+    finish signing in as the attacker's Google account.
+    """
     try:
         client = get_provider(provider)
     except ValueError as exc:
         raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED, str(exc))
-    state = _sign({"typ": "oauth_state", "provider": provider}, _STATE_TTL)
-    return client.authorize_url(state, redirect_uri(provider))
+    nonce = secrets.token_urlsafe(32)
+    state = _sign(
+        {
+            "typ": "oauth_state",
+            "provider": provider,
+            "nonce": hashlib.sha256(nonce.encode()).hexdigest(),
+        },
+        _STATE_TTL,
+    )
+    return client.authorize_url(state, redirect_uri(provider)), nonce
 
 
 async def _link_or_find(
@@ -111,12 +132,25 @@ async def _link_or_find(
 
 
 async def callback(
-    session: AsyncSession, provider: str, code: str, state: str
+    session: AsyncSession,
+    provider: str,
+    code: str,
+    state: str,
+    nonce: Optional[str],
 ) -> Tuple[str, str]:
     """Returns (kind, token) where kind is 'handoff' or 'signup'."""
     claims = _verify(state, "oauth_state")
     if claims.get("provider") != provider:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid link")
+
+    # The state must be the one this browser was given.
+    expected = claims.get("nonce") or ""
+    presented = hashlib.sha256(nonce.encode()).hexdigest() if nonce else ""
+    if not expected or not hmac.compare_digest(expected, presented):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "This sign-in didn't start in this browser. Try again.",
+        )
 
     try:
         client = get_provider(provider)

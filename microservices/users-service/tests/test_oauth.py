@@ -23,9 +23,14 @@ def _stub_enabled():
 
 
 def _start(client):
-    r = client.get("/auth/oauth/google/start")
-    assert r.status_code == 200, r.text
-    return parse_qs(urlparse(r.json()["authorize_url"]).query)["state"][0]
+    """Follow the start redirect far enough to read the state it issued.
+
+    The client keeps the nonce cookie, which is what pairs that state with
+    this browser.
+    """
+    r = client.get("/auth/oauth/google/start", follow_redirects=False)
+    assert r.status_code == 307, r.text
+    return parse_qs(urlparse(r.headers["location"]).query)["state"][0]
 
 
 def _callback(client, email, state=None):
@@ -127,3 +132,45 @@ def test_a_provider_account_gets_no_password_reset(client):
     # Same answer as for an unknown address, and no token minted — a reset would
     # quietly attach a password to a Google account.
     assert r.json().get("reset_token") is None
+
+
+def test_a_state_from_another_browser_is_refused(client):
+    """Login CSRF: an attacker starts a sign-in, gets a validly signed state,
+    and lures a victim to a callback URL built from it. Without pairing the
+    state to the browser that started it, the victim's browser would finish
+    signing in as the attacker's Google account."""
+    attacker_state = _start(client)
+    client.cookies.clear()  # the victim's browser never asked for this sign-in
+
+    r = client.get(
+        "/auth/oauth/google/callback",
+        params={"code": "attacker@example.com", "state": attacker_state},
+        follow_redirects=False,
+    )
+    assert r.status_code == 400, r.text
+    assert "browser" in r.json()["detail"].lower()
+
+
+def test_a_mismatched_nonce_is_refused(client):
+    state = _start(client)
+    client.cookies.clear()  # replace, don't add alongside the real one
+    client.cookies.set("ndorsify_oauth_nonce", "some-other-browsers-nonce")
+
+    r = client.get(
+        "/auth/oauth/google/callback",
+        params={"code": "victim@example.com", "state": state},
+        follow_redirects=False,
+    )
+    assert r.status_code == 400
+
+
+def test_the_nonce_cookie_is_cleared_once_used(client):
+    state = _start(client)
+    r = client.get(
+        "/auth/oauth/google/callback",
+        params={"code": "once-only@example.com", "state": state},
+        follow_redirects=False,
+    )
+    assert r.status_code == 307
+    # Replaying the same state now fails: the cookie that paired it is gone.
+    assert client.cookies.get("ndorsify_oauth_nonce") in (None, "")

@@ -1,5 +1,6 @@
 """Alembic environment (async), wired to the app's settings and metadata."""
 import asyncio
+import os
 
 from alembic import context
 import sqlalchemy as sa
@@ -8,19 +9,22 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import settings
-from app.db.session import DATABASE_URL, _connect_args
+from app.db.session import DATABASE_URL, _connect_args, _normalise
 from app.db.base import Base
 from app import models  # noqa: F401  (register models on Base.metadata)
 
 config = context.config
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+# Neon's pooled endpoint is PgBouncer; DDL and `SET search_path` want a direct
+# connection, which the provider hands out as DATABASE_URL_UNPOOLED.
+MIGRATION_URL = _normalise(os.environ.get("DATABASE_URL_UNPOOLED") or DATABASE_URL)
+config.set_main_option("sqlalchemy.url", MIGRATION_URL)
 
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=DATABASE_URL,
+        url=MIGRATION_URL,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -40,11 +44,11 @@ def do_run_migrations(connection: Connection) -> None:
         connection.execute(sa.text(f'SET search_path TO "{schema}"'))
         connection.commit()
 
-    context.configure(
-        connection=connection,
-        target_metadata=target_metadata,
-        version_table_schema=schema if connection.dialect.name == "postgresql" else None,
-    )
+    # search_path is safe here: migrations run on a direct connection (see
+    # MIGRATION_URL), not through the transaction pooler. It keeps the existing
+    # unqualified migration scripts, reflection and alembic_version all
+    # pointing at this service's schema.
+    context.configure(connection=connection, target_metadata=target_metadata)
     with context.begin_transaction():
         context.run_migrations()
 

@@ -62,3 +62,19 @@ class MessageResponse(BaseModel):
     status: str = "ok"
     # DEV/TEST ONLY (settings.expose_dev_tokens).
     reset_token: Optional[str] = None
+
+
+# --- Social sign-in ---
+class OAuthStartResponse(BaseModel):
+    authorize_url: str
+
+
+class OAuthExchangeRequest(BaseModel):
+    handoff: str
+
+
+class OAuthCompleteRequest(BaseModel):
+    """First sign-in: the provider gave us an identity, not a role."""
+
+    signup: str
+    role: Role

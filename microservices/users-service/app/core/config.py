@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     port: int = 1000
     # SQLAlchemy async URL. Postgres in prod; SQLite (aiosqlite) in tests.
     database_url: str = "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/usersdb"
+    # Drop connection pooling (serverless instances don't reuse one).
+    db_null_pool: bool = False
 
     # --- Auth (P0) -----------------------------------------------------------
     # JWT_SECRET MUST be overridden per environment. RS256 is an option later

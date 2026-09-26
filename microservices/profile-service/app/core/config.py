@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     port: int = 6060
     database_url: str = "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/profiledb"
+    # Drop connection pooling (serverless instances don't reuse one).
+    db_null_pool: bool = False
 
     # --- Auth (P0) ---
     # Must match users-service so this service can verify access tokens it issues.

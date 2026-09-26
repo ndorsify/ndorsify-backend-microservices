@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/dynamiccontentdb"
     )
+    # Drop connection pooling (serverless instances don't reuse one).
+    db_null_pool: bool = False
 
 
 settings = Settings()

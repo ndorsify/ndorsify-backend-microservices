@@ -1,6 +1,9 @@
 name: CI
 
-# Runs each service's pytest suite (SQLite-backed, no Postgres needed).
+# Two jobs:
+#   test       - each service's pytest suite (SQLite-backed, no Postgres needed)
+#   migrations - each service's Alembic history against a real Postgres, then
+#                `alembic check` to catch models drifting from migrations
 # ruff/black linting and a docker-compose build job are planned follow-ups
 # (see docs/plans/technical-specifications/e7-platform.md §4).
 
@@ -40,3 +43,69 @@ jobs:
 
       - name: Run tests
         run: pytest -q
+
+  migrations:
+    # Production runs on Postgres, where Alembic owns the schema — SQLite tests
+    # never execute a single migration. This job is the only thing that proves
+    # `alembic upgrade head` works before a deploy depends on it, and
+    # `alembic check` catches the silent version: a model that no migration
+    # creates, or an env.py that forgets to import its models (which makes
+    # autogenerate propose dropping every table it can't see).
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: users-service
+            database: usersdb
+          - service: dynamic-content-service
+            database: dynamiccontentdb
+          - service: profile-service
+            database: profiledb
+          - service: messaging-service
+            database: messagingdb
+          - service: discovery-service
+            database: discoverydb
+          - service: campaign-service
+            database: campaigndb
+          - service: collaboration-service
+            database: collaborationdb
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ndorsify
+          POSTGRES_PASSWORD: ndorsify
+          POSTGRES_DB: ${{ matrix.database }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ndorsify"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: microservices/${{ matrix.service }}
+    env:
+      DATABASE_URL: postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/${{ matrix.database }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: microservices/${{ matrix.service }}/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply migrations
+        run: alembic upgrade head
+
+      - name: Models match migrations
+        run: alembic check
+
+      - name: Migrations are reversible
+        run: alembic downgrade base

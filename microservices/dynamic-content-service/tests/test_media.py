@@ -266,3 +266,22 @@ def test_submission_key_is_still_a_capability(client):
         "/media/sign-download", params={"key": key}, headers=_auth(75)
     )
     assert other_party.status_code == 200
+
+
+def test_upload_url_carries_the_public_prefix(client, monkeypatch):
+    """Deployed, the edge strips /api before the app sees it — so a URL the
+    app generates must put it back, or the client PUTs to a 404."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "root_path", "/api")
+    from app.main import create_app
+    from fastapi.testclient import TestClient
+
+    with TestClient(create_app()) as prefixed:
+        r = prefixed.post(
+            "/media/sign-upload",
+            json={"scope": "media-kit", "content_type": "image/png", "size_bytes": 10},
+            headers=_auth(90),
+        )
+        assert r.status_code == 200, r.text
+        assert "/api/media/upload/" in r.json()["upload_url"], r.json()["upload_url"]

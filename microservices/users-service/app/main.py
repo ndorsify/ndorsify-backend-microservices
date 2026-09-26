@@ -20,6 +20,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         # Preserve the Java Swagger UI path (springdoc served /api-docs.html).
+        root_path=settings.root_path,
         docs_url="/api-docs.html",
         openapi_url="/api-docs.json",
         lifespan=lifespan,

@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     app_name: str = "dynamic-content-service"
     # Comma-separated origins allowed to call this service from a browser (CORS).
     cors_origins: str = "http://localhost:3000"
+    # Public path prefix this service is served under. Deployed, the edge
+    # strips /api before the request arrives, so the app never sees it — but
+    # any URL it *generates* has to carry it, or the caller gets a 404.
+    root_path: str = ""
     port: int = 5000
     database_url: str = (
         "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/dynamiccontentdb"

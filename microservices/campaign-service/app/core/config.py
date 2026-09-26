@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     app_name: str = "campaign-service"
     port: int = 2000
     database_url: str = "postgresql+asyncpg://ndorsify:ndorsify@localhost:5432/campaigndb"
+    # This service's schema in the shared Postgres (see db/session.py).
+    db_schema: str = "campaign"
     # Drop connection pooling (serverless instances don't reuse one).
     db_null_pool: bool = False
     # Comma-separated origins allowed to call this service from a browser (CORS).

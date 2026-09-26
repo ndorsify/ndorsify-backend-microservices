@@ -13,7 +13,8 @@
           "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
-      ]
+      ],
+      "buildCommand": "pip install -r requirements.txt && alembic upgrade head"
     },
     "campaigns": {
       "root": "microservices/campaign-service",
@@ -35,7 +36,8 @@
           "format": "url",
           "env": "COLLABORATION_URL"
         }
-      ]
+      ],
+      "buildCommand": "pip install -r requirements.txt && alembic upgrade head"
     },
     "collab": {
       "root": "microservices/collaboration-service",
@@ -49,7 +51,8 @@
           "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
-      ]
+      ],
+      "buildCommand": "pip install -r requirements.txt && alembic upgrade head"
     },
     "profiles": {
       "root": "microservices/profile-service",
@@ -71,7 +74,8 @@
           "format": "url",
           "env": "DISCOVERY_URL"
         }
-      ]
+      ],
+      "buildCommand": "pip install -r requirements.txt && alembic upgrade head"
     },
     "discovery": {
       "root": "microservices/discovery-service",
@@ -85,7 +89,8 @@
           "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
-      ]
+      ],
+      "buildCommand": "pip install -r requirements.txt && alembic upgrade head"
     },
     "messaging": {
       "root": "microservices/messaging-service",
@@ -99,7 +104,8 @@
           "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
-      ]
+      ],
+      "buildCommand": "pip install -r requirements.txt && alembic upgrade head"
     },
     "content": {
       "root": "microservices/dynamic-content-service",
@@ -113,7 +119,8 @@
           "source": "/api/:path(.*)?",
           "destination": "/:path"
         }
-      ]
+      ],
+      "buildCommand": "pip install -r requirements.txt && alembic upgrade head"
     }
   },
   "rewrites": [

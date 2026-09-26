@@ -91,6 +91,24 @@ setting for short-lived serverless instances that never reuse a pool.
 `dynamic-content-service` seeds reference rows on startup (idempotent); seeding
 is separate from migrations.
 
+## Deploying
+
+`vercel.json` defines the repo as one Vercel project with seven services, each
+routed by path (`/api/users/*` → users-service, and so on). A service-scoped
+rewrite strips the prefix, so service code never sees it and nothing changes
+between local and deployed.
+
+The two internal calls are **bindings**, not public HTTP: campaign-service
+receives `COLLABORATION_URL` and profile-service receives `DISCOVERY_URL`,
+injected per deployment. Never hardcode a deployment hostname into either.
+
+Everything ships together — one preview URL, one rollback for all seven. See
+[ADR 0005](docs/adr/0005-deploy-as-vercel-services.md).
+
+Environment that must be set on the project before it works: `JWT_SECRET`
+(one value, all seven), `DATABASE_URL` per service, `BLOB_READ_WRITE_TOKEN`,
+`SEED_ON_START=false` and `EXPOSE_DEV_TOKENS=false`.
+
 ## Ports
 
 `users-service` 1000 · `campaign-service` 2000 · `messaging-service` 3000
